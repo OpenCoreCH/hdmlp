@@ -32,7 +32,8 @@ void FileSystemBackend::init_id_mapping() {
     }
     while ((entry = readdir(dp))) {
         if (entry->d_type == DT_REG) {
-            id_mappings.insert(std::pair<int, std::string>(id, entry->d_name));
+            id_mappings[id] = entry->d_name;
+            id += 1;
             std::cout << entry->d_name << std::endl;
         }
     }
