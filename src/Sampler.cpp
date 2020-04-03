@@ -37,9 +37,6 @@ Sampler::Sampler(int count,
 /**
  * Shuffle the provided sequence (vector).
  *
- * We implement our own shuffling with the Fisher Yates Algorithm as C++'s std::shuffle() is implementation dependent.
- * It therefore wouldn't allow us to look ahead the shuffled sequences.
- *
  * @param vec Pointer to vector that is shuffled
  * @param restore_random_state If this param is set to true, random_engine will be restored after shuffling. This is used
  * for looking ahead without changing the random state (i.e. for getting the access frequency in the beginning)
@@ -47,17 +44,10 @@ Sampler::Sampler(int count,
 void Sampler::shuffle_sequence(std::vector<int>* vec, bool restore_random_state) {
     if (restore_random_state) {
         std::default_random_engine engine_copy = *random_engine;
-        fisher_yates(vec);
+        std::shuffle(vec->begin(), vec->end(), *random_engine);
         *random_engine = engine_copy;
     } else {
-        fisher_yates(vec);
-    }
-}
-
-void Sampler::fisher_yates(std::vector<int>* vec) {
-    for (unsigned long i = vec->size() - 1; i > 0; i--) {
-        std::uniform_int_distribution<> dis(0, i);
-        std::iter_swap(vec->begin() + i,vec->begin() + dis(*random_engine));
+        std::shuffle(vec->begin(), vec->end(), *random_engine);
     }
 }
 
