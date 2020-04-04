@@ -1,5 +1,7 @@
 #include <iostream>
 #include <sstream>
+#include <map>
+#include <vector>
 #include "../include/Configuration.h"
 
 Configuration::Configuration(const std::string& config_path) {
@@ -35,8 +37,38 @@ int Configuration::get_int_entry(const std::string& key) {
     return val;
 }
 
-void Configuration::get_storage_classes() {
+void Configuration::get_storage_classes(std::vector<int>* capacities,
+                                        std::vector<int>* threads,
+                                        std::vector<std::map<int, int>>* bandwidths) {
     const libconfig::Setting& root = cfg.getRoot();
     const libconfig::Setting& storage_classes = root["storage_classes"];
-    std::cout << storage_classes.getLength() << std::endl;
+    int count = storage_classes.getLength();
+    for (int i = 0; i < count; i++) {
+        const libconfig::Setting& storage_class = storage_classes[i];
+        int capacity = storage_class.lookup("capacity");
+        capacities->push_back(capacity);
+        int no_threads = storage_class.lookup("threads");
+        threads->push_back(no_threads);
+        const libconfig::Setting& bandwidth = storage_class.lookup("bandwidth");
+        int bw_count = bandwidth.getLength();
+        std::map<int, int> bw_mappings;
+        for (int j = 0; j < bw_count; j++) {
+            int bw_threads = bandwidth[j].lookup("threads");
+            int bw_bw = bandwidth[j].lookup("bw");
+            bw_mappings[bw_threads] = bw_bw;
+        }
+        bandwidths->push_back(bw_mappings);
+    }
+}
+
+void Configuration::get_pfs_bandwidth(std::map<int, int>* bandwidths) {
+    const libconfig::Setting& root = cfg.getRoot();
+    const libconfig::Setting& pfs_bandwidth = root["pfs_bandwidth"];
+    int count = pfs_bandwidth.getLength();
+    for (int i = 0; i < count; i++) {
+        const libconfig::Setting& bw = pfs_bandwidth[i];
+        int processes = bw.lookup("processes");
+        int bandwidth = bw.lookup("bw");
+        (*bandwidths)[processes] = bandwidth;
+    }
 }
