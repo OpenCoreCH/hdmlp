@@ -13,9 +13,19 @@ public:
                int distr_scheme,
                bool drop_last_batch,
                int seed);
+    ~Prefetcher();
+    char* get_staging_buffer();
+
 private:
+    char* staging_buffer;
     StorageBackend* backend;
     Sampler* sampler;
+    std::vector<int> capacities;
+    std::vector<int> threads;
+    std::vector<std::map<int, int>> bandwidths;
+    std::map<int, int> pfs_bandwidth;
+
+    void init_staging_buffer();
 };
 
 

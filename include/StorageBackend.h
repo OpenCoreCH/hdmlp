@@ -7,6 +7,7 @@
 
 class StorageBackend {
 public:
+    virtual ~StorageBackend() = default;
     virtual int get_length() = 0;
     virtual std::map<int, std::string> get_id_mapping() = 0;
 };
