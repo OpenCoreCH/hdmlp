@@ -61,17 +61,26 @@ void Sampler::get_access_frequency(std::map<int, int>* access_freq, int node_id,
 }
 
 void Sampler::get_access_frequency_for_seq(std::vector<int>* seq, std::map<int, int>* access_freq, int node_id) {
-    int offset = node_local_batch_size * node_id;
-    for (int j = 0; j < batch_no; j++) {
-        for (int k = j * batch_size + offset;
-             k < std::min(j * batch_size + std::min(offset + node_local_batch_size, batch_size), count);
-             k++) {
-            int file_id = (*seq)[k];
-            if (access_freq->count(file_id)) {
-                (*access_freq)[file_id] += 1;
-            } else {
-                (*access_freq)[file_id] = 1;
+    switch (distr_scheme) {
+        case 1:
+        {
+            int offset = node_local_batch_size * node_id;
+            for (int j = 0; j < batch_no; j++) {
+                for (int k = j * batch_size + offset;
+                     k < std::min(j * batch_size + std::min(offset + node_local_batch_size, batch_size), count);
+                     k++) {
+                    int file_id = (*seq)[k];
+                    if (access_freq->count(file_id)) {
+                        (*access_freq)[file_id] += 1;
+                    } else {
+                        (*access_freq)[file_id] = 1;
+                    }
+                }
             }
+            break;
         }
+        default:
+            throw std::runtime_error("Unsupported distr_scheme");
     }
+
 }
