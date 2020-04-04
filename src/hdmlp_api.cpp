@@ -6,7 +6,7 @@ extern "C"
 
 #include <iostream>
 
-void setup(wchar_t * dataset_path,
+char* setup(wchar_t * dataset_path,
            int batch_size,
            int distr_scheme,
            bool drop_last_batch,
@@ -16,4 +16,9 @@ void setup(wchar_t * dataset_path,
                distr_scheme,
                drop_last_batch,
                seed);
+    char* test = new char[1024*1024];
+    for (int i = 0; i < 20; i++) {
+        test[i] = 'a';
+    }
+    return test;
 }
