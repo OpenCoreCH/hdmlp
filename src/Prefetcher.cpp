@@ -2,6 +2,7 @@
 #include "../include/Prefetcher.h"
 #include "../include/FileSystemBackend.h"
 #include "../include/Configuration.h"
+#include "../include/StagingBufferPrefetcher.h"
 
 
 Prefetcher::Prefetcher(const std::wstring& dataset_path,
@@ -10,13 +11,24 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path,
                        int distr_scheme,
                        bool drop_last_batch,
                        int seed) {
+    int n = 1;
+    int node_id = 0;
     backend = new FileSystemBackend(dataset_path);
-    sampler = new Sampler(backend->get_length(), 1, batch_size, epochs, distr_scheme, drop_last_batch, seed);
+    sampler = new Sampler(backend->get_length(), n, batch_size, epochs, distr_scheme, drop_last_batch, seed);
     Configuration config("../../cpp/hdmlp/data/hdmlp.cfg");
     config.get_storage_classes(&capacities, &threads, &bandwidths);
     config.get_pfs_bandwidth(&pfs_bandwidth);
     int staging_buffer_capacity = capacities[0];
     staging_buffer = new char[staging_buffer_capacity];
+
+    std::vector<int> file_ends;
+    StagingBufferPrefetcher sbf(staging_buffer,
+                                staging_buffer_capacity,
+                                node_id,
+                                &file_ends,
+                                *sampler,
+                                backend);
+    sbf.prefetch();
 }
 
 char *Prefetcher::get_staging_buffer() {
