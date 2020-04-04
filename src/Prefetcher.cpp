@@ -10,7 +10,7 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path,
                        bool drop_last_batch,
                        int seed) {
     backend = new FileSystemBackend(dataset_path);
-    sampler = new Sampler(backend->get_length(), 1, batch_size, distr_scheme, drop_last_batch, seed);
+    sampler = new Sampler(backend->get_length(), 1, batch_size, epochs, distr_scheme, drop_last_batch, seed);
     Configuration config("../../cpp/hdmlp/data/hdmlp.cfg");
     std::vector<int> capacities;
     std::vector<int> threads;
@@ -18,7 +18,4 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path,
     config.get_storage_classes(&capacities, &threads, &bandwidths);
     std::map<int, int> pfs_bandwidth;
     config.get_pfs_bandwidth(&pfs_bandwidth);
-    for (auto &pair : pfs_bandwidth) {
-        std::cout << pair.first << " = " << pair.second << std::endl;
-    }
 }

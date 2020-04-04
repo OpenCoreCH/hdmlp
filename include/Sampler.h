@@ -11,6 +11,7 @@ public:
     Sampler(int count,
             int n,
             int batch_size,
+            int epochs,
             int distr_scheme,
             bool drop_last_batch,
             int seed);

@@ -4,6 +4,7 @@
 Sampler::Sampler(int count,
                  int n,
                  int batch_size,
+                 int epochs,
                  int distr_scheme,
                  bool drop_last_batch,
                  int seed) {
@@ -28,7 +29,8 @@ Sampler::Sampler(int count,
     random_engine = new std::default_random_engine(seed);
     shuffle_sequence(access_sequence, false);
     std::map<int, int> access_freq;
-    get_access_frequency(&access_freq, 0, 10);
+    std::cout << epochs << std::endl;
+    get_access_frequency(&access_freq, 0, epochs);
     for (const auto &pair : access_freq) {
         std::cout << pair.first << " = " << pair.second << std::endl;
     }
