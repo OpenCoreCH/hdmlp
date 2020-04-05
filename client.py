@@ -8,7 +8,7 @@ job = hdmlp.Job("/tmp/test",
                 None)
 job.setup()
 
-
-
+for i in range(128):
+    print(job.get())
 
 job.destroy()

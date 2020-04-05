@@ -25,6 +25,7 @@ class Job:
         self.drop_last_batch = drop_last_batch
         self.seed = seed
         self.buffer_p = None
+        self.buffer_offset = 0
 
     def setup(self):
         self.hdmlp_lib.setup.restype = ctypes.c_char_p
@@ -35,10 +36,15 @@ class Job:
                              ctypes.c_bool(self.drop_last_batch),
                              self.seed)
         self.buffer_p = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_char))
-        print(self.buffer_p[0:150])
 
     def destroy(self):
         self.hdmlp_lib.destroy()
 
     def get(self):
-        pass
+        file_end = self.hdmlp_lib.get_next_file_end()
+        #print(file_end)
+        if file_end < self.buffer_offset:
+            self.buffer_offset = 0
+        file = self.buffer_p[self.buffer_offset:file_end]
+        self.buffer_offset = file_end
+        return file
