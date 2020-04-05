@@ -18,7 +18,7 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path,
     Configuration config("../../cpp/hdmlp/data/hdmlp.cfg");
     config.get_storage_classes(&capacities, &threads, &bandwidths);
     config.get_pfs_bandwidth(&pfs_bandwidth);
-    int staging_buffer_capacity = capacities[0];
+    int staging_buffer_capacity = capacities[0] * 1024 * 1024;
     staging_buffer = new char[staging_buffer_capacity];
 
     StagingBufferPrefetcher sbf(staging_buffer,
@@ -48,5 +48,5 @@ char *Prefetcher::get_staging_buffer() {
 Prefetcher::~Prefetcher() {
     delete backend;
     delete sampler;
-    delete staging_buffer;
+    delete[] staging_buffer;
 }
