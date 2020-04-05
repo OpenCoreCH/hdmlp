@@ -3,8 +3,10 @@
 
 #include <string>
 #include <deque>
+#include <thread>
 #include "StorageBackend.h"
 #include "Sampler.h"
+#include "StagingBufferPrefetcher.h"
 
 class Prefetcher {
 public:
@@ -22,12 +24,16 @@ private:
     char* staging_buffer;
     StorageBackend* backend;
     Sampler* sampler;
+    StagingBufferPrefetcher* sbf;
     std::vector<int> capacities;
-    std::vector<int> threads;
+    std::vector<int> no_threads;
+    std::vector<std::vector<std::thread>> threads;
     std::vector<std::map<int, int>> bandwidths;
     std::map<int, int> pfs_bandwidth;
     std::deque<int> file_ends;
+    int node_id = 0;
 
+    void init_threads();
 };
 
 
