@@ -19,6 +19,7 @@ Sampler::Sampler(int count, // NOLINT(cert-msc32-c,cert-msc51-cpp)
     this->count = count;
     this->batch_size = batch_size;
     this->distr_scheme = distr_scheme;
+    this->epochs = epochs;
     if (drop_last_batch) {
         batch_no = count / batch_size;
     } else {
@@ -100,4 +101,8 @@ void Sampler::get_access_frequency_for_seq(std::vector<int>* seq, std::map<int, 
             (*access_freq)[file_id] = 1;
         }
     }
+}
+
+void Sampler::advance_batch() {
+    shuffle_sequence(&access_sequence, false);
 }

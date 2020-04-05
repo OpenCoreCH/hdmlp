@@ -9,6 +9,8 @@
 
 class Sampler {
 public:
+    int epochs;
+
     Sampler(int count,
             int n,
             int batch_size,
@@ -18,6 +20,7 @@ public:
             int seed);
 
     void get_node_access_string(int node_id, std::vector<int>* access_string);
+    void advance_batch();
 
 private:
     std::default_random_engine random_engine;
