@@ -28,7 +28,7 @@ class Job:
         self.buffer_offset = 0
 
     def setup(self):
-        self.hdmlp_lib.setup.restype = ctypes.c_char_p
+        self.hdmlp_lib.setup.restype = ctypes.c_void_p
         buffer = self.hdmlp_lib.setup(ctypes.c_wchar_p(self.dataset_path),
                              self.batch_size,
                              self.epochs,
@@ -42,7 +42,6 @@ class Job:
 
     def get(self):
         file_end = self.hdmlp_lib.get_next_file_end()
-        #print(file_end)
         if file_end < self.buffer_offset:
             self.buffer_offset = 0
         file = self.buffer_p[self.buffer_offset:file_end]
