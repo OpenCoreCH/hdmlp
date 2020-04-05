@@ -37,9 +37,25 @@ void FileSystemBackend::init_id_mapping() {
         throw std::runtime_error("Invalid path specified");
     }
     while ((entry = readdir(dp))) {
-        if (entry->d_type == DT_REG) {
-            id_mappings[id] = entry->d_name;
-            id += 1;
+        if (entry->d_name[0] != '.' && entry->d_type == DT_DIR) {
+            std::string dir_name = entry->d_name;
+            struct dirent *subentry = nullptr;
+            DIR *subp = nullptr;
+
+            subp = opendir((path + dir_name).c_str());
+
+            while ((subentry = readdir(subp))) {
+                if (subentry->d_type == DT_REG) {
+                    std::cout << subentry->d_name << std::endl;
+                    label_mappings[id] = entry->d_name;
+                    id_mappings[id] = subentry->d_name;
+                    id += 1;
+                }
+            }
+
+            closedir(subp);
+
+
         }
     }
     closedir(dp);
@@ -49,13 +65,15 @@ std::string FileSystemBackend::abs_path(const std::string* rel_path) {
     return path + *rel_path;
 }
 
-int FileSystemBackend::get_file_size(int file_id) {
-    std::string file_name = abs_path(&id_mappings[file_id]);
+unsigned long FileSystemBackend::get_entry_size(int file_id) {
+    std::string label = label_mappings[file_id];
+    std::string rel_path = label + '/' + id_mappings[file_id];
+    std::string file_name = abs_path(&rel_path);
     int fd = open(file_name.c_str(), O_RDONLY);
     struct stat stbuf; // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
     fstat(fd, &stbuf);
     close(fd);
-    return stbuf.st_size;
+    return stbuf.st_size + label.length() + 1;
 }
 
 /**
@@ -65,13 +83,16 @@ int FileSystemBackend::get_file_size(int file_id) {
  * @param dst
  * @param file_size_hint Optional hint indicating the file size (if known by the producer). '-1' if unknown
  */
-void FileSystemBackend::fetch(int file_id, char *dst, int file_size_hint) {
-    std::string file_name = abs_path(&id_mappings[file_id]);
-    int file_size = file_size_hint;
+void FileSystemBackend::fetch(int file_id, char *dst, unsigned long file_size_hint) {
+    std::string label = label_mappings[file_id];
+    std::string rel_path = label + '/' + id_mappings[file_id];
+    std::string file_name = abs_path(&rel_path);
+    strcpy(dst, label.c_str());
+    unsigned long file_size = file_size_hint;
     if (file_size_hint == -1) {
-        file_size = get_file_size(file_id);
+        file_size = get_entry_size(file_id);
     }
     FILE* f = fopen(file_name.c_str(), "rb");
-    fread(dst, 1, file_size, f);
+    fread(dst + label.length() + 1, 1, file_size, f);
     fclose(f);
 }

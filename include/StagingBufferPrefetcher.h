@@ -21,7 +21,7 @@ private:
     int buffer_size;
     int prefetch_batch = 0;
     int prefetch_offset = 0;
-    int staging_buffer_pointer = 0;
+    unsigned long staging_buffer_pointer = 0;
     int read_offset = 0;
     char* staging_buffer;
     std::deque<int>* file_ends;
