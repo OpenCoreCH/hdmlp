@@ -1,6 +1,6 @@
 #ifndef HDMLP_STAGINGBUFFERPREFETCHER_H
 #define HDMLP_STAGINGBUFFERPREFETCHER_H
-#include <vector>
+#include <deque>
 #include "Sampler.h"
 
 
@@ -9,9 +9,10 @@ public:
     StagingBufferPrefetcher(char* staging_buffer,
                             int buffer_size,
                             int node_id,
-                            std::vector<int>* file_ends,
-                            Sampler sampler,
+                            std::deque<int>* file_ends,
+                            Sampler* sampler,
                             StorageBackend* backend);
+    ~StagingBufferPrefetcher();
     void prefetch();
 
 private:
@@ -21,7 +22,7 @@ private:
     int staging_buffer_pointer = 0;
     int read_offset = 0;
     char* staging_buffer;
-    std::vector<int>* file_ends;
+    std::deque<int>* file_ends;
     Sampler* sampler;
     StorageBackend* backend;
     int node_id;

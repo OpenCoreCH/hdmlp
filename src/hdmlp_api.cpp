@@ -19,6 +19,10 @@ char* setup(wchar_t * dataset_path,
     return staging_buffer;
 }
 
+int get_next_file_end() {
+    return pf->get_next_file_end();
+}
+
 void destroy() {
     delete pf;
 }

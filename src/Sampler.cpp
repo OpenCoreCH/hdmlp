@@ -29,7 +29,7 @@ Sampler::Sampler(int count, // NOLINT(cert-msc32-c,cert-msc51-cpp)
     random_engine.seed(seed);
     shuffle_sequence(&access_sequence, false);
     std::map<int, int> access_freq;
-    get_access_frequency(&access_freq, 0, epochs);
+    //get_access_frequency(&access_freq, 0, epochs);
     for (const auto &pair : access_freq) {
         //std::cout << pair.first << " = " << pair.second << std::endl;
     }

@@ -1,18 +1,23 @@
 #include <iostream>
+#include <utility>
 #include "../include/StagingBufferPrefetcher.h"
 
 StagingBufferPrefetcher::StagingBufferPrefetcher(char *staging_buffer,
                                                  int buffer_size,
                                                  int node_id,
-                                                 std::vector<int>* file_ends,
-                                                 Sampler sampler,
+                                                 std::deque<int>* file_ends,
+                                                 Sampler* sampler,
                                                  StorageBackend* backend) {
     this->buffer_size = buffer_size;
     this->staging_buffer = staging_buffer;
     this->node_id = node_id;
     this->file_ends = file_ends;
-    this->sampler = &sampler;
+    this->sampler = new Sampler(*sampler);
     this->backend = backend;
+}
+
+StagingBufferPrefetcher::~StagingBufferPrefetcher() {
+    delete sampler;
 }
 
 void StagingBufferPrefetcher::prefetch() {

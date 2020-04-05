@@ -21,14 +21,24 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path,
     int staging_buffer_capacity = capacities[0];
     staging_buffer = new char[staging_buffer_capacity];
 
-    std::vector<int> file_ends;
     StagingBufferPrefetcher sbf(staging_buffer,
                                 staging_buffer_capacity,
                                 node_id,
                                 &file_ends,
-                                *sampler,
+                                sampler,
                                 backend);
     sbf.prefetch();
+}
+
+int Prefetcher::get_next_file_end() {
+    int file_end;
+    if (!file_ends.empty()) {
+        file_end = file_ends.front();
+        file_ends.pop_front();
+    } else {
+        throw std::runtime_error("Empty buffer");
+    }
+    return file_end;
 }
 
 char *Prefetcher::get_staging_buffer() {

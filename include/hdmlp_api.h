@@ -8,6 +8,8 @@ extern "C" {
                 bool drop_last_batch,
                 int seed);
 
+    int get_next_file_end();
+
     void destroy();
 };
 #endif //HDMLP_HDMLP_API_H

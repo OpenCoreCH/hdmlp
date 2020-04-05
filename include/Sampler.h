@@ -20,8 +20,8 @@ public:
     void get_node_access_string(int node_id, std::vector<int>* access_string);
 
 private:
-    std::vector<int> access_sequence;
     std::default_random_engine random_engine;
+    std::vector<int> access_sequence;
     int n;
     int count;
     int batch_size;

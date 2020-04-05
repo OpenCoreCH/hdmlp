@@ -2,6 +2,7 @@
 #define HDMLP_PREFETCHER_H
 
 #include <string>
+#include <deque>
 #include "StorageBackend.h"
 #include "Sampler.h"
 
@@ -15,6 +16,7 @@ public:
                int seed);
     ~Prefetcher();
     char* get_staging_buffer();
+    int get_next_file_end();
 
 private:
     char* staging_buffer;
@@ -24,8 +26,8 @@ private:
     std::vector<int> threads;
     std::vector<std::map<int, int>> bandwidths;
     std::map<int, int> pfs_bandwidth;
+    std::deque<int> file_ends;
 
-    void init_staging_buffer();
 };
 
 
