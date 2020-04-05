@@ -23,6 +23,8 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path,
                                       staging_buffer_capacity,
                                       node_id,
                                       &file_ends,
+                                      &staging_buffer_mutex,
+                                      &staging_buffer_cond_var,
                                       sampler,
                                       backend);
     init_threads();
@@ -43,13 +45,12 @@ void Prefetcher::init_threads() {
 }
 
 int Prefetcher::get_next_file_end() {
-    int file_end;
-    if (!file_ends.empty()) {
-        file_end = file_ends.front();
-        file_ends.pop_front();
-    } else {
-        throw std::runtime_error("Empty buffer");
+    std::unique_lock<std::mutex> lock(staging_buffer_mutex);
+    while (file_ends.empty()) {
+        staging_buffer_cond_var.wait(lock);
     }
+    int file_end = file_ends.front();
+    file_ends.pop_front();
     return file_end;
 }
 
@@ -58,6 +59,11 @@ char *Prefetcher::get_staging_buffer() {
 }
 
 Prefetcher::~Prefetcher() {
+    for (auto &thread_list : threads) {
+        for (auto &thread : thread_list) {
+            thread.join();
+        }
+    }
     delete backend;
     delete sampler;
     delete sbf;

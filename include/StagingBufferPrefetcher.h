@@ -10,6 +10,8 @@ public:
                             int buffer_size,
                             int node_id,
                             std::deque<int>* file_ends,
+                            std::mutex* staging_buffer_mutex,
+                            std::condition_variable* staging_buffer_cond_var,
                             Sampler* sampler,
                             StorageBackend* backend);
     ~StagingBufferPrefetcher();
@@ -23,6 +25,8 @@ private:
     int read_offset = 0;
     char* staging_buffer;
     std::deque<int>* file_ends;
+    std::mutex* staging_buffer_mutex;
+    std::condition_variable* staging_buffer_cond_var;
     Sampler* sampler;
     StorageBackend* backend;
     int node_id;
