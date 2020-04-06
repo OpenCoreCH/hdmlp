@@ -47,7 +47,7 @@ class Job:
         label_offset = 0
         while self.buffer_p[self.buffer_offset + label_offset] != b'\x00':
             label_offset += 1
-        label = self.buffer_p[self.buffer_offset:self.buffer_offset + label_offset]
+        label = self.buffer_p[self.buffer_offset:self.buffer_offset + label_offset].decode('utf-8')
         file = self.buffer_p[self.buffer_offset + label_offset + 1:file_end]
         self.buffer_offset = file_end
         return label, file
