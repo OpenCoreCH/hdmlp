@@ -54,6 +54,10 @@ int Prefetcher::get_next_file_end() {
     return file_end;
 }
 
+int Prefetcher::get_dataset_length() {
+    return backend->get_length();
+}
+
 char *Prefetcher::get_staging_buffer() {
     return staging_buffer;
 }

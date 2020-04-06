@@ -19,6 +19,7 @@ public:
     ~Prefetcher();
     char* get_staging_buffer();
     int get_next_file_end();
+    int get_dataset_length();
 
 private:
     char* staging_buffer;

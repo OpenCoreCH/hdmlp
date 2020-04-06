@@ -8,6 +8,8 @@ extern "C" {
                 bool drop_last_batch,
                 int seed);
 
+    int length();
+
     int get_next_file_end();
 
     void destroy();
