@@ -6,6 +6,9 @@ from torchvision import datasets, models, transforms
 import time
 import os
 import copy
+import hdmlp
+from lib.torch.hdmlpfolder import HDMLPImageFolder
+from lib.torch.hdmlpdataloader import HDMLPDataLoader
 
 
 def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_inception=False):
@@ -171,7 +174,7 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Tr
 
 # Top level data directory. Here we assume the format of the directory conforms
 #   to the ImageFolder structure
-data_dir = "/Volumes/Daten/Daten/Datasets/hymenoptera_data"
+data_dir = "/tmp/hymenoptera_data"
 
 # Models to choose from [resnet, alexnet, vgg, squeezenet, densenet, inception]
 model_name = "squeezenet"
@@ -215,9 +218,13 @@ data_transforms = {
 print("Initializing Datasets and Dataloaders...")
 
 # Create training and validation datasets
-image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms[x]) for x in ['train', 'val']}
+#image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms[x]) for x in ['train', 'val']}
+image_datasets = {x: HDMLPImageFolder(os.path.join(data_dir, x), hdmlp.Job(os.path.join(data_dir, x), batch_size, num_epochs, 'uniform', True),
+                                      data_transforms[x])
+                  for x in ['train', 'val']}
 # Create training and validation dataloaders
-dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size, shuffle=True, num_workers=4) for x in ['train', 'val']}
+dataloaders_dict = {x: HDMLPDataLoader(image_datasets[x], batch_size, True) for x in ['train', 'val']}
+#dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size, shuffle=True, num_workers=4) for x in ['train', 'val']}
 
 # Detect if we have a GPU available
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

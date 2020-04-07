@@ -1,12 +1,12 @@
 import os
 import torch
 import hdmlp
-from .hdmlpfolder import ImageFolderHDMLP
+from .hdmlpfolder import HDMLPImageFolder
 
 META_FILE = "meta.bin"
 
 
-class HDMLPImageNet(ImageFolderHDMLP):
+class HDMLPImageNet(HDMLPImageFolder):
     """`ImageNet <http://image-net.org/>`_ 2012 Classification Dataset.
 
     Args:

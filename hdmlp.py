@@ -14,7 +14,7 @@ class Job:
                  distr_scheme: str,
                  drop_last_batch: bool,
                  seed: Optional[int] = None):
-        libname = pathlib.Path().absolute() / "../../cpp/hdmlp/cmake-build-debug/libhdmlp.dylib"
+        libname = "/Volumes/GoogleDrive/Meine Ablage/Dokumente/1 - Schule/1 - ETHZ/6. Semester/Bachelor Thesis/hdmlp/cpp/hdmlp/cmake-build-debug/libhdmlp.dylib"
         self.hdmlp_lib = ctypes.CDLL(libname)
         self.dataset_path = dataset_path
         self.batch_size = batch_size
@@ -26,22 +26,25 @@ class Job:
         self.seed = seed
         self.buffer_p = None
         self.buffer_offset = 0
+        self.job_id = None
 
     def setup(self):
-        self.hdmlp_lib.setup.restype = ctypes.c_void_p
-        buffer = self.hdmlp_lib.setup(ctypes.c_wchar_p(self.dataset_path),
+        job_id = self.hdmlp_lib.setup(ctypes.c_wchar_p(self.dataset_path),
                              self.batch_size,
                              self.epochs,
                              self.distr_scheme,
                              ctypes.c_bool(self.drop_last_batch),
                              self.seed)
+        self.hdmlp_lib.get_staging_buffer.restype = ctypes.c_void_p
+        buffer = self.hdmlp_lib.get_staging_buffer(job_id)
+        self.job_id = job_id
         self.buffer_p = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_char))
 
     def destroy(self):
-        self.hdmlp_lib.destroy()
+        self.hdmlp_lib.destroy(self.job_id)
 
     def get(self):
-        file_end = self.hdmlp_lib.get_next_file_end()
+        file_end = self.hdmlp_lib.get_next_file_end(self.job_id)
         if file_end < self.buffer_offset:
             self.buffer_offset = 0
         label_offset = 0
@@ -53,4 +56,4 @@ class Job:
         return label, file
 
     def length(self):
-        return self.hdmlp_lib.length()
+        return self.hdmlp_lib.length(self.job_id)

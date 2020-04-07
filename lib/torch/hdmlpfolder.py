@@ -5,6 +5,8 @@ from PIL import Image
 
 import os
 import os.path
+import numpy as np
+import io
 
 
 def has_file_allowed_extension(filename, extensions):
@@ -31,7 +33,7 @@ def is_image_file(filename):
     """
     return has_file_allowed_extension(filename, IMG_EXTENSIONS)
 
-class HDMLPDatasetFolderHDMLP(HDMLPVisionDataset):
+class HDMLPDatasetFolder(HDMLPVisionDataset):
     """A generic data loader where the samples are arranged in this way: ::
 
         root/class_x/xxx.ext
@@ -60,8 +62,8 @@ class HDMLPDatasetFolderHDMLP(HDMLPVisionDataset):
 
     def __init__(self, root, hdmlp_job: hdmlp.Job, transform=None,
                  target_transform=None):
-        super(HDMLPDatasetFolderHDMLP, self).__init__(root, transform=transform,
-                                                      target_transform=target_transform)
+        super(HDMLPDatasetFolder, self).__init__(root, transform=transform,
+                                                 target_transform=target_transform)
         classes, class_to_idx = self._find_classes(self.root)
 
         self.job = hdmlp_job
@@ -114,31 +116,12 @@ class HDMLPDatasetFolderHDMLP(HDMLPVisionDataset):
 IMG_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tiff', '.webp')
 
 
-def pil_loader(path):
-    # open path as file to avoid ResourceWarning (https://github.com/python-pillow/Pillow/issues/835)
-    with open(path, 'rb') as f:
-        img = Image.open(f)
-        return img.convert('RGB')
+def pil_decode(object):
+    img = Image.open(io.BytesIO(object))
+    return img.convert('RGB')
 
 
-def accimage_loader(path):
-    import accimage
-    try:
-        return accimage.Image(path)
-    except IOError:
-        # Potentially a decoding problem, fall back to PIL.Image
-        return pil_loader(path)
-
-
-def default_loader(path):
-    from torchvision import get_image_backend
-    if get_image_backend() == 'accimage':
-        return accimage_loader(path)
-    else:
-        return pil_loader(path)
-
-
-class ImageFolderHDMLP(HDMLPDatasetFolderHDMLP):
+class HDMLPImageFolder(HDMLPDatasetFolder):
     """A generic data loader where the images are arranged in this way: ::
 
         root/dog/xxx.png
@@ -163,6 +146,18 @@ class ImageFolderHDMLP(HDMLPDatasetFolderHDMLP):
     """
 
     def __init__(self, root, hdmlp_job: hdmlp.Job, transform=None, target_transform=None):
-        super(ImageFolderHDMLP, self).__init__(root, hdmlp_job,
+        super(HDMLPImageFolder, self).__init__(root, hdmlp_job,
                                                transform=transform,
                                                target_transform=target_transform)
+
+
+    def __getitem__(self, item):
+        folder_label, raw_sample = self.job.get()
+        sample = pil_decode(raw_sample)
+        target = self.class_to_idx[folder_label]
+        if self.transform is not None:
+            sample = self.transform(sample)
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+
+        return sample, target
