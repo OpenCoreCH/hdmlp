@@ -1,4 +1,5 @@
-from .vision import VisionDataset
+from .hdmlpvision import HDMLPVisionDataset
+import hdmlp
 
 from PIL import Image
 
@@ -30,32 +31,7 @@ def is_image_file(filename):
     """
     return has_file_allowed_extension(filename, IMG_EXTENSIONS)
 
-
-def make_dataset(directory, class_to_idx, extensions=None, is_valid_file=None):
-    instances = []
-    directory = os.path.expanduser(directory)
-    both_none = extensions is None and is_valid_file is None
-    both_something = extensions is not None and is_valid_file is not None
-    if both_none or both_something:
-        raise ValueError("Both extensions and is_valid_file cannot be None or not None at the same time")
-    if extensions is not None:
-        def is_valid_file(x):
-            return has_file_allowed_extension(x, extensions)
-    for target_class in sorted(class_to_idx.keys()):
-        class_index = class_to_idx[target_class]
-        target_dir = os.path.join(directory, target_class)
-        if not os.path.isdir(target_dir):
-            continue
-        for root, _, fnames in sorted(os.walk(target_dir, followlinks=True)):
-            for fname in sorted(fnames):
-                path = os.path.join(root, fname)
-                if is_valid_file(path):
-                    item = path, class_index
-                    instances.append(item)
-    return instances
-
-
-class DatasetFolder(VisionDataset):
+class HDMLPDatasetFolderHDMLP(HDMLPVisionDataset):
     """A generic data loader where the samples are arranged in this way: ::
 
         root/class_x/xxx.ext
@@ -68,42 +44,31 @@ class DatasetFolder(VisionDataset):
 
     Args:
         root (string): Root directory path.
-        loader (callable): A function to load a sample given its path.
-        extensions (tuple[string]): A list of allowed extensions.
-            both extensions and is_valid_file should not be passed.
+        hdmlp_job (hdmlp.Job): Configured HDMLP job for the dataset.
         transform (callable, optional): A function/transform that takes in
             a sample and returns a transformed version.
             E.g, ``transforms.RandomCrop`` for images.
         target_transform (callable, optional): A function/transform that takes
             in the target and transforms it.
-        is_valid_file (callable, optional): A function that takes path of a file
-            and check if the file is a valid file (used to check of corrupt files)
-            both extensions and is_valid_file should not be passed.
 
      Attributes:
         classes (list): List of the class names.
         class_to_idx (dict): Dict with items (class_name, class_index).
-        samples (list): List of (sample path, class_index) tuples
+        folder_to_idx (dict): Dict with items (folder_name, class_index)
         targets (list): The class_index value for each image in the dataset
     """
 
-    def __init__(self, root, loader, extensions=None, transform=None,
-                 target_transform=None, is_valid_file=None):
-        super(DatasetFolder, self).__init__(root, transform=transform,
-                                            target_transform=target_transform)
+    def __init__(self, root, hdmlp_job: hdmlp.Job, transform=None,
+                 target_transform=None):
+        super(HDMLPDatasetFolderHDMLP, self).__init__(root, transform=transform,
+                                                      target_transform=target_transform)
         classes, class_to_idx = self._find_classes(self.root)
-        samples = make_dataset(self.root, class_to_idx, extensions, is_valid_file)
-        if len(samples) == 0:
-            raise (RuntimeError("Found 0 files in subfolders of: " + self.root + "\n"
-                                "Supported extensions are: " + ",".join(extensions)))
 
-        self.loader = loader
-        self.extensions = extensions
+        self.job = hdmlp_job
+        self.job.setup()
 
         self.classes = classes
         self.class_to_idx = class_to_idx
-        self.samples = samples
-        self.targets = [s[1] for s in samples]
 
     def _find_classes(self, dir):
         """
@@ -131,8 +96,8 @@ class DatasetFolder(VisionDataset):
         Returns:
             tuple: (sample, target) where target is class_index of the target class.
         """
-        path, target = self.samples[index]
-        sample = self.loader(path)
+        folder_label, sample = self.job.get()
+        target = self.class_to_idx[folder_label]
         if self.transform is not None:
             sample = self.transform(sample)
         if self.target_transform is not None:
@@ -141,8 +106,10 @@ class DatasetFolder(VisionDataset):
         return sample, target
 
     def __len__(self):
-        return len(self.samples)
+        return self.job.length()
 
+    def __del__(self):
+        self.job.destroy()
 
 IMG_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tiff', '.webp')
 
@@ -171,7 +138,7 @@ def default_loader(path):
         return pil_loader(path)
 
 
-class ImageFolder(DatasetFolder):
+class ImageFolderHDMLP(HDMLPDatasetFolderHDMLP):
     """A generic data loader where the images are arranged in this way: ::
 
         root/dog/xxx.png
@@ -184,24 +151,18 @@ class ImageFolder(DatasetFolder):
 
     Args:
         root (string): Root directory path.
+        hdmlp_job (hdmlp.Job): Configured HDMLP job for the dataset.
         transform (callable, optional): A function/transform that  takes in an PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
-        loader (callable, optional): A function to load an image given its path.
-        is_valid_file (callable, optional): A function that takes path of an Image file
-            and check if the file is a valid file (used to check of corrupt files)
 
      Attributes:
         classes (list): List of the class names.
         class_to_idx (dict): Dict with items (class_name, class_index).
-        imgs (list): List of (image path, class_index) tuples
     """
 
-    def __init__(self, root, transform=None, target_transform=None,
-                 loader=default_loader, is_valid_file=None):
-        super(ImageFolder, self).__init__(root, loader, IMG_EXTENSIONS if is_valid_file is None else None,
-                                          transform=transform,
-                                          target_transform=target_transform,
-                                          is_valid_file=is_valid_file)
-        self.imgs = self.samples
+    def __init__(self, root, hdmlp_job: hdmlp.Job, transform=None, target_transform=None):
+        super(ImageFolderHDMLP, self).__init__(root, hdmlp_job,
+                                               transform=transform,
+                                               target_transform=target_transform)

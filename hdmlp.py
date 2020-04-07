@@ -51,3 +51,6 @@ class Job:
         file = self.buffer_p[self.buffer_offset + label_offset + 1:file_end]
         self.buffer_offset = file_end
         return label, file
+
+    def length(self):
+        return self.hdmlp_lib.length()
