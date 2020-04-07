@@ -19,10 +19,10 @@ class HDMLPDataLoader(object):
             raise StopIteration
         elif self.batch_offset + self.batch_size > self.dataset_size:
             if self.drop_last_batch:
-                iter_batch_size = self.dataset_size - self.batch_offset
-            else:
                 self.batch_offset = 0
                 raise StopIteration
+            else:
+                iter_batch_size = self.dataset_size - self.batch_offset
 
         labels = []
         samples = []
