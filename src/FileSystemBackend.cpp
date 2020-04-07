@@ -80,18 +80,18 @@ unsigned long FileSystemBackend::get_entry_size(int file_id) {
  *
  * @param file_id
  * @param dst
- * @param file_size_hint Optional hint indicating the file size (if known by the producer). '-1' if unknown
+ * @param entry_size_hint Optional hint indicating the entry size (if known by the producer). '-1' if unknown
  */
-void FileSystemBackend::fetch(int file_id, char *dst, unsigned long file_size_hint) {
+void FileSystemBackend::fetch(int file_id, char *dst, unsigned long entry_size_hint) {
     std::string label = label_mappings[file_id];
     std::string rel_path = label + '/' + id_mappings[file_id];
     std::string file_name = abs_path(&rel_path);
     strcpy(dst, label.c_str());
-    unsigned long file_size = file_size_hint;
-    if (file_size_hint == -1) {
-        file_size = get_entry_size(file_id);
+    unsigned long entry_size = entry_size_hint;
+    if (entry_size_hint == -1) {
+        entry_size = get_entry_size(file_id);
     }
     FILE* f = fopen(file_name.c_str(), "rb");
-    fread(dst + label.length() + 1, 1, file_size, f);
+    fread(dst + label.length() + 1, 1, entry_size - label.length() - 1, f);
     fclose(f);
 }

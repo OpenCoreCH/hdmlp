@@ -26,7 +26,6 @@ StagingBufferPrefetcher::~StagingBufferPrefetcher() {
 }
 
 void StagingBufferPrefetcher::prefetch() {
-    std::this_thread::sleep_for(std::chrono::milliseconds(0));
     for (int i = prefetch_batch; i < sampler->epochs; i++) {
         std::vector<int> curr_access_string;
         sampler->get_node_access_string(node_id, &curr_access_string);
