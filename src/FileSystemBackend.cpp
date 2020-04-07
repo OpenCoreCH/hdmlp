@@ -16,7 +16,7 @@ FileSystemBackend::FileSystemBackend(const std::wstring& path) {
         str_path += '/';
     }
     this->path = str_path;
-    this->init_id_mapping();
+    this->init_mappings();
 }
 
 std::map<int, std::string> FileSystemBackend::get_id_mapping() {
@@ -27,7 +27,7 @@ int FileSystemBackend::get_length() {
     return id_mappings.size();
 }
 
-void FileSystemBackend::init_id_mapping() {
+void FileSystemBackend::init_mappings() {
     int id = 0;
     struct dirent *entry = nullptr;
     DIR *dp = nullptr;
@@ -46,9 +46,15 @@ void FileSystemBackend::init_id_mapping() {
 
             while ((subentry = readdir(subp))) {
                 if (subentry->d_type == DT_REG) {
-                    std::cout << subentry->d_name << std::endl;
                     label_mappings[id] = entry->d_name;
                     id_mappings[id] = subentry->d_name;
+                    std::string rel_path = label_mappings[id] + '/' + id_mappings[id];
+                    std::string file_name = abs_path(&rel_path);
+                    int fd = open(file_name.c_str(), O_RDONLY);
+                    struct stat stbuf; // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
+                    fstat(fd, &stbuf);
+                    close(fd);
+                    size_mappings[id] = stbuf.st_size + label_mappings[id].size() + 1;
                     id += 1;
                 }
             }
@@ -66,14 +72,7 @@ std::string FileSystemBackend::abs_path(const std::string* rel_path) {
 }
 
 unsigned long FileSystemBackend::get_entry_size(int file_id) {
-    std::string label = label_mappings[file_id];
-    std::string rel_path = label + '/' + id_mappings[file_id];
-    std::string file_name = abs_path(&rel_path);
-    int fd = open(file_name.c_str(), O_RDONLY);
-    struct stat stbuf; // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
-    fstat(fd, &stbuf);
-    close(fd);
-    return stbuf.st_size + label.length() + 1;
+    return size_mappings[file_id];
 }
 
 /**

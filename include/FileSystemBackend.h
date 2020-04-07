@@ -14,9 +14,10 @@ public:
 private:
     std::string path;
     std::map<int, std::string> label_mappings;
+    std::map<int, int> size_mappings;
     std::map<int, std::string> id_mappings;
 
-    void init_id_mapping();
+    void init_mappings();
 
     std::string abs_path(const std::string *rel_path);
 };
