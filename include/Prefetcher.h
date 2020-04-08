@@ -38,6 +38,7 @@ private:
     std::deque<int> file_ends;
     int node_id = 0;
 
+    void init_config();
     void init_threads();
 };
 
