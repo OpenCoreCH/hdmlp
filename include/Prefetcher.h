@@ -27,6 +27,7 @@ private:
     StorageBackend* backend;
     Sampler* sampler;
     StagingBufferPrefetcher* sbf;
+    PrefetcherBackend** pf_backends{};
     std::mutex staging_buffer_mutex;
     std::condition_variable staging_buffer_cond_var;
     std::vector<int> config_capacities;

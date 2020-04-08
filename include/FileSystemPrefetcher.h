@@ -9,6 +9,7 @@
 class FileSystemPrefetcher : public PrefetcherBackend {
 public:
     explicit FileSystemPrefetcher(const std::map<std::string, std::string>& backend_options);
+    void prefetch() override;
 };
 
 

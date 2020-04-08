@@ -9,6 +9,7 @@
 class MemoryPrefetcher : public PrefetcherBackend {
 public:
     explicit MemoryPrefetcher(const std::map<std::string, std::string>& backend_options);
+    void prefetch() override;
 };
 
 

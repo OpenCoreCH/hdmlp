@@ -3,9 +3,10 @@
 #include "../include/FileSystemBackend.h"
 #include "../include/Configuration.h"
 #include "../include/StagingBufferPrefetcher.h"
+#include "../include/PrefetcherBackendFactory.h"
 
 
-Prefetcher::Prefetcher(const std::wstring& dataset_path,
+Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidelines-pro-type-member-init)
                        int batch_size,
                        int epochs,
                        int distr_scheme,
@@ -36,12 +37,20 @@ void Prefetcher::init_config() {
 
 
 void Prefetcher::init_threads() {
-    for (int j = 0; j < config_no_threads.size(); j++) {
+    int classes = config_no_threads.size();
+    pf_backends = new PrefetcherBackend*[classes - 1];
+    for (int j = 0; j < classes; j++) {
         int no_storage_class_threads = config_no_threads[j];
         std::vector<std::thread> storage_class_threads;
         for (int k = 0; k < no_storage_class_threads; k++) {
             if (j == 0) {
                 std::thread thread(&StagingBufferPrefetcher::prefetch, std::ref(*sbf));
+                storage_class_threads.push_back(std::move(thread));
+            } else {
+                PrefetcherBackend* pf = PrefetcherBackendFactory::create(config_pf_backends[j - 1],
+                                                                         config_pf_backend_options[j - 1]);
+                pf_backends[j - 1] = pf;
+                std::thread thread(&PrefetcherBackend::prefetch, std::ref(*pf));
                 storage_class_threads.push_back(std::move(thread));
             }
         }
@@ -73,6 +82,10 @@ Prefetcher::~Prefetcher() {
             thread.join();
         }
     }
+    for (int i = 0; i < config_no_threads.size() - 1; i++) {
+        delete pf_backends[i];
+    }
+    delete[] pf_backends;
     delete backend;
     delete sampler;
     delete sbf;
