@@ -2,6 +2,9 @@
 #define HDMLP_HDMLP_API_H
 #define PARALLEL_JOBS_LIMIT 255
 extern "C" {
+    Prefetcher* pf[PARALLEL_JOBS_LIMIT];
+    bool used_map[PARALLEL_JOBS_LIMIT] = { false };
+
     int setup(wchar_t * dataset_path,
               int batch_size,
               int epochs,
