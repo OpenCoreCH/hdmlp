@@ -15,7 +15,12 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path,
     backend = new FileSystemBackend(dataset_path);
     sampler = new Sampler(backend->get_length(), n, batch_size, epochs, distr_scheme, drop_last_batch, seed);
     Configuration config("/Volumes/GoogleDrive/Meine Ablage/Dokumente/1 - Schule/1 - ETHZ/6. Semester/Bachelor Thesis/hdmlp/cpp/hdmlp/data/hdmlp.cfg");
-    config.get_storage_classes(&capacities, &no_threads, &bandwidths);
+    config.get_storage_classes(&capacities, &no_threads, &bandwidths, &pf_backends, &pf_backend_options);
+    for (auto &pf_backend_option: pf_backend_options) {
+        for (auto &pair : pf_backend_option) {
+            std::cout << pair.first << " = " << pair.second;
+        }
+    }
     config.get_pfs_bandwidth(&pfs_bandwidth);
     int staging_buffer_capacity = capacities[0] * 1024 * 1024;
     staging_buffer = new char[staging_buffer_capacity];

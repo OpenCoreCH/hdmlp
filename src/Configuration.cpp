@@ -39,7 +39,9 @@ int Configuration::get_int_entry(const std::string& key) {
 
 void Configuration::get_storage_classes(std::vector<int>* capacities,
                                         std::vector<int>* threads,
-                                        std::vector<std::map<int, int>>* bandwidths) {
+                                        std::vector<std::map<int, int>>* bandwidths,
+                                        std::vector<std::string>* pf_backends,
+                                        std::vector<std::map<std::string, std::string>>* pf_backend_options) {
     const libconfig::Setting& root = cfg.getRoot();
     const libconfig::Setting& storage_classes = root["storage_classes"];
     int count = storage_classes.getLength();
@@ -58,6 +60,19 @@ void Configuration::get_storage_classes(std::vector<int>* capacities,
             bw_mappings[bw_threads] = bw_bw;
         }
         bandwidths->push_back(bw_mappings);
+        if (i > 0) {
+            std::string backend = storage_class.lookup("backend");
+            pf_backends->push_back(backend);
+            std::map<std::string, std::string> backend_options_map;
+            if (storage_class.exists("backend_options")) {
+                libconfig::Setting& backend_options = storage_class.lookup("backend_options");
+                for (int j = 0; j < backend_options.getLength(); j++) {
+                    const libconfig::Setting& child = backend_options[j];
+                    backend_options_map[child.getName()] = (std::string) backend_options.lookup(child.getName());
+                }
+            }
+            pf_backend_options->push_back(backend_options_map);
+        }
     }
 }
 

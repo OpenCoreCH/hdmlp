@@ -30,6 +30,8 @@ private:
     std::condition_variable staging_buffer_cond_var;
     std::vector<int> capacities;
     std::vector<int> no_threads;
+    std::vector<std::string> pf_backends;
+    std::vector<std::map<std::string, std::string>> pf_backend_options;
     std::vector<std::vector<std::thread>> threads;
     std::vector<std::map<int, int>> bandwidths;
     std::map<int, int> pfs_bandwidth;
