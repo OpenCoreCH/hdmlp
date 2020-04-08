@@ -15,7 +15,7 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path,
     backend = new FileSystemBackend(dataset_path);
     sampler = new Sampler(backend->get_length(), n, batch_size, epochs, distr_scheme, drop_last_batch, seed);
     init_config();
-    int staging_buffer_capacity = capacities[0] * 1024 * 1024;
+    int staging_buffer_capacity = config_capacities[0] * 1024 * 1024;
     staging_buffer = new char[staging_buffer_capacity];
     sbf = new StagingBufferPrefetcher(staging_buffer,
                                       staging_buffer_capacity,
@@ -30,14 +30,14 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path,
 
 void Prefetcher::init_config() {
     Configuration config("/Volumes/GoogleDrive/Meine Ablage/Dokumente/1 - Schule/1 - ETHZ/6. Semester/Bachelor Thesis/hdmlp/cpp/hdmlp/data/hdmlp.cfg");
-    config.get_storage_classes(&capacities, &no_threads, &bandwidths, &pf_backends, &pf_backend_options);
-    config.get_pfs_bandwidth(&pfs_bandwidth);
+    config.get_storage_classes(&config_capacities, &config_no_threads, &config_bandwidths, &config_pf_backends, &config_pf_backend_options);
+    config.get_pfs_bandwidth(&config_pfs_bandwidth);
 }
 
 
 void Prefetcher::init_threads() {
-    for (int j = 0; j < no_threads.size(); j++) {
-        int no_storage_class_threads = no_threads[j];
+    for (int j = 0; j < config_no_threads.size(); j++) {
+        int no_storage_class_threads = config_no_threads[j];
         std::vector<std::thread> storage_class_threads;
         for (int k = 0; k < no_storage_class_threads; k++) {
             if (j == 0) {
