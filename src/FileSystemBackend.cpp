@@ -23,6 +23,10 @@ std::map<int, std::string> FileSystemBackend::get_id_mapping() {
     return id_mappings;
 }
 
+std::string FileSystemBackend::get_label(int file_id) {
+    return label_mappings[file_id];
+}
+
 int FileSystemBackend::get_length() {
     return id_mappings.size();
 }
@@ -54,7 +58,7 @@ void FileSystemBackend::init_mappings() {
                     struct stat stbuf; // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
                     fstat(fd, &stbuf);
                     close(fd);
-                    size_mappings[id] = stbuf.st_size + label_mappings[id].size() + 1;
+                    size_mappings[id] = stbuf.st_size;
                     id += 1;
                 }
             }
@@ -71,7 +75,7 @@ std::string FileSystemBackend::abs_path(const std::string* rel_path) {
     return path + *rel_path;
 }
 
-unsigned long FileSystemBackend::get_entry_size(int file_id) {
+unsigned long FileSystemBackend::get_file_size(int file_id) {
     return size_mappings[file_id];
 }
 
@@ -86,12 +90,11 @@ void FileSystemBackend::fetch(int file_id, char *dst, unsigned long entry_size_h
     std::string label = label_mappings[file_id];
     std::string rel_path = label + '/' + id_mappings[file_id];
     std::string file_name = abs_path(&rel_path);
-    strcpy(dst, label.c_str());
     unsigned long entry_size = entry_size_hint;
     if (entry_size_hint == -1) {
-        entry_size = get_entry_size(file_id);
+        entry_size = get_file_size(file_id);
     }
     FILE* f = fopen(file_name.c_str(), "rb");
-    fread(dst + label.length() + 1, 1, entry_size - label.length() - 1, f);
+    fread(dst, 1, entry_size, f);
     fclose(f);
 }

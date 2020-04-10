@@ -12,7 +12,7 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidel
                        int distr_scheme,
                        bool drop_last_batch,
                        int seed) {
-    int n = 1;
+    int n = 2;
     backend = new FileSystemBackend(dataset_path);
     sampler = new Sampler(backend, n, batch_size, epochs, distr_scheme, drop_last_batch, seed);
     init_config();

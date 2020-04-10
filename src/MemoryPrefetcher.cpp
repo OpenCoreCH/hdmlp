@@ -9,6 +9,7 @@ MemoryPrefetcher::MemoryPrefetcher(const std::map<std::string, std::string> &bac
     buffer = new char[capacity];
     this->prefetch_start = prefetch_start;
     this->prefetch_end = prefetch_end;
+    this->backend = backend;
     num_elems = std::distance(prefetch_start, prefetch_end);
     file_ends = new unsigned long long int[num_elems];
 }
@@ -21,6 +22,16 @@ MemoryPrefetcher::~MemoryPrefetcher() {
 void MemoryPrefetcher::prefetch() {
     std::cout << "MemoryPrefetcher::prefetch called" << std::endl;
     for (auto ptr = prefetch_start; ptr < prefetch_end; ptr++) {
-        std::cout << *ptr << std::endl;
+        int offset = std::distance(prefetch_start, ptr);
+        int file_id = *ptr;
+        unsigned long long prev_end = 0;
+        if (offset != 0) {
+            prev_end = file_ends[offset - 1];
+        }
+        unsigned long file_size = backend->get_file_size(file_id);
+        backend->fetch(file_id, buffer + prev_end, file_size);
+        std::cout << "Storing at" << prev_end << std::endl;
+        file_ends[offset] = prev_end + file_size;
+        //std::cout << *ptr << std::endl;
     }
 }

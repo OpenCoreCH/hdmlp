@@ -21,6 +21,7 @@ public:
 private:
     char* buffer;
     unsigned long long int* file_ends;
+    StorageBackend* backend;
     std::vector<int>::const_iterator prefetch_start;
     std::vector<int>::const_iterator prefetch_end;
     int num_elems;
