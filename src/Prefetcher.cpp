@@ -32,6 +32,10 @@ void Prefetcher::init_threads() {
     std::vector<std::vector<int>::const_iterator> storage_class_ends;
     sampler->get_prefetch_string(node_id, &config_capacities, &prefetch_string, &storage_class_ends);
     for (int j = 0; j < classes; j++) {
+        if (j > storage_class_ends.size()) {
+            // Only create thread if there is something to prefetch
+            continue;
+        }
         int no_storage_class_threads = config_no_threads[j];
         std::vector<std::thread> storage_class_threads;
         for (int k = 0; k < no_storage_class_threads; k++) {
@@ -94,12 +98,13 @@ char *Prefetcher::get_staging_buffer() {
 }
 
 Prefetcher::~Prefetcher() {
+    int used_classes = threads.size();
     for (auto &thread_list : threads) {
         for (auto &thread : thread_list) {
             thread.join();
         }
     }
-    for (int i = 0; i < config_no_threads.size() - 1; i++) {
+    for (int i = 0; i < used_classes - 1; i++) {
         delete pf_backends[i];
     }
     delete[] pf_backends;
