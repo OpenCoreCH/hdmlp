@@ -16,6 +16,8 @@ class Job:
                  seed: Optional[int] = None):
         libname = "/Volumes/GoogleDrive/Meine Ablage/Dokumente/1 - Schule/1 - ETHZ/6. Semester/Bachelor Thesis/hdmlp/cpp/hdmlp/cmake-build-debug/libhdmlp.dylib"
         self.hdmlp_lib = ctypes.CDLL(libname)
+        self.hdmlp_lib.get_next_file_end.restype = ctypes.c_ulonglong
+        self.hdmlp_lib.get_staging_buffer.restype = ctypes.c_void_p
         self.dataset_path = dataset_path
         self.batch_size = batch_size
         self.epochs = epochs
@@ -35,7 +37,6 @@ class Job:
                              self.distr_scheme,
                              ctypes.c_bool(self.drop_last_batch),
                              self.seed)
-        self.hdmlp_lib.get_staging_buffer.restype = ctypes.c_void_p
         buffer = self.hdmlp_lib.get_staging_buffer(job_id)
         self.job_id = job_id
         self.buffer_p = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_char))

@@ -1,11 +1,12 @@
 import hdmlp
-from PIL import Image
-import io
 
 batch_size = 128
-epochs = 1
+epochs = 10
 
-job = hdmlp.Job("/tmp/hymenoptera_data/train",
+path = "/tmp/test"
+#path = "/Volumes/Daten/Daten/Datasets/hymenoptera_data/train" # (245 files)
+
+job = hdmlp.Job(path,
                 batch_size,
                 epochs,
                 "uniform",
@@ -14,11 +15,10 @@ job = hdmlp.Job("/tmp/hymenoptera_data/train",
 job.setup()
 print("Setup complete")
 
-for i in range(batch_size * epochs):
+for i in range(batch_size * epochs // 2):
     label, sample = job.get()
-    img = Image.open(io.BytesIO(sample))
-    img.convert('RGB')
-    #img.show()
+    print(label)
+    print(sample)
 
 
 job.destroy()
