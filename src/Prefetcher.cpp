@@ -71,8 +71,10 @@ void Prefetcher::init_threads() {
                 auto prefetch_end = storage_class_ends[j - 1];
                 PrefetcherBackend* pf = PrefetcherBackendFactory::create(config_pf_backends[j - 1],
                                                                          config_pf_backend_options[j - 1],
+                                                                         config_capacities[j],
                                                                          prefetch_start,
-                                                                         prefetch_end);
+                                                                         prefetch_end,
+                                                                         backend);
                 pf_backends[j - 1] = pf;
                 std::thread thread(&PrefetcherBackend::prefetch, std::ref(*pf));
                 storage_class_threads.push_back(std::move(thread));

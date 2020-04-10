@@ -6,12 +6,15 @@
 #include <string>
 #include <vector>
 #include "PrefetcherBackend.h"
+#include "StorageBackend.h"
 
 class MemoryPrefetcher : public PrefetcherBackend {
 public:
     explicit MemoryPrefetcher(const std::map<std::string, std::string> &backend_options,
                               std::vector<int>::const_iterator prefetch_start,
-                              std::vector<int>::const_iterator prefetch_end);
+                              std::vector<int>::const_iterator prefetch_end,
+                              unsigned long long int capacity,
+                              StorageBackend* backend);
     void prefetch() override;
 };
 
