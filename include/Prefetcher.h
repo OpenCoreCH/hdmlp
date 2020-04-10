@@ -8,6 +8,7 @@
 #include "Sampler.h"
 #include "StagingBufferPrefetcher.h"
 #include "PrefetcherBackend.h"
+#include "MetadataStore.h"
 
 class Prefetcher {
 public:
@@ -23,11 +24,12 @@ public:
     int get_dataset_length();
 
 private:
-    char* staging_buffer{};
+    char* staging_buffer;
     StorageBackend* backend;
     Sampler* sampler;
-    StagingBufferPrefetcher* sbf{};
-    PrefetcherBackend** pf_backends{};
+    StagingBufferPrefetcher* sbf;
+    PrefetcherBackend** pf_backends;
+    MetadataStore* metadata_store;
     std::mutex staging_buffer_mutex;
     std::condition_variable staging_buffer_cond_var;
     std::vector<unsigned long long int> config_capacities;
@@ -41,7 +43,6 @@ private:
     int node_id = 0;
 
     void init_config();
-    void init_staging_buffer();
     void init_threads();
 };
 

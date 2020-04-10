@@ -1,11 +1,12 @@
 #include <iostream>
 #include "../include/FileSystemPrefetcher.h"
+#include "../include/MetadataStore.h"
 
-FileSystemPrefetcher::FileSystemPrefetcher(const std::map<std::string, std::string> &backend_options,
-                                           const std::vector<int>::const_iterator prefetch_start,
-                                           const std::vector<int>::const_iterator prefetch_end,
+FileSystemPrefetcher::FileSystemPrefetcher(const std::map<std::string,
+        std::string> &backend_options, std::vector<int>::const_iterator prefetch_start,
+                                           std::vector<int>::const_iterator prefetch_end,
                                            unsigned long long int capacity,
-                                           StorageBackend* backend) {
+                                           StorageBackend* backend, MetadataStore* metadata_store, int storage_level) {
 
 }
 

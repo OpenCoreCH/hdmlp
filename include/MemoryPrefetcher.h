@@ -7,6 +7,7 @@
 #include <vector>
 #include "PrefetcherBackend.h"
 #include "StorageBackend.h"
+#include "MetadataStore.h"
 
 class MemoryPrefetcher : public PrefetcherBackend {
 public:
@@ -14,7 +15,9 @@ public:
                               std::vector<int>::const_iterator prefetch_start,
                               std::vector<int>::const_iterator prefetch_end,
                               unsigned long long int capacity,
-                              StorageBackend* backend);
+                              StorageBackend* backend,
+                              MetadataStore* metadata_store,
+                              int storage_level);
     ~MemoryPrefetcher() override;
     void prefetch() override;
     void fetch(int file_id, char *dst) override;
@@ -24,9 +27,11 @@ private:
     unsigned long long int* file_ends;
     std::map<int, int> buffer_offsets;
     StorageBackend* backend;
+    MetadataStore* metadata_store;
     std::vector<int>::const_iterator prefetch_start;
     std::vector<int>::const_iterator prefetch_end;
     int num_elems;
+    int storage_level;
 };
 
 

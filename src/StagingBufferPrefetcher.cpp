@@ -11,7 +11,8 @@ StagingBufferPrefetcher::StagingBufferPrefetcher(char *staging_buffer,
                                                  std::condition_variable* staging_buffer_cond_var,
                                                  Sampler* sampler,
                                                  StorageBackend* backend,
-                                                 PrefetcherBackend** pf_backends) {
+                                                 PrefetcherBackend** pf_backends,
+                                                 MetadataStore* metadata_store) {
     this->buffer_size = buffer_size;
     this->staging_buffer = staging_buffer;
     this->node_id = node_id;
@@ -21,6 +22,7 @@ StagingBufferPrefetcher::StagingBufferPrefetcher(char *staging_buffer,
     this->sampler = new Sampler(*sampler);
     this->backend = backend;
     this->pf_backends = pf_backends;
+    this->metadata_store = metadata_store;
 }
 
 StagingBufferPrefetcher::~StagingBufferPrefetcher() {
@@ -50,8 +52,7 @@ void StagingBufferPrefetcher::prefetch() {
             }
 
             strcpy(staging_buffer + staging_buffer_pointer, label.c_str());
-            //backend->fetch(file_id, staging_buffer + staging_buffer_pointer + label.size() + 1);
-            pf_backends[0]->fetch(file_id, staging_buffer + staging_buffer_pointer + label.size() + 1);
+            fetch(file_id, staging_buffer + staging_buffer_pointer + label.size() + 1);
             std::unique_lock<std::mutex> lock(*staging_buffer_mutex);
             file_ends->push_back(staging_buffer_pointer + entry_size);
             staging_buffer_cond_var->notify_one();
@@ -63,5 +64,16 @@ void StagingBufferPrefetcher::prefetch() {
         sampler->advance_batch();
         prefetch_batch += 1;
         prefetch_offset = 0;
+    }
+}
+
+void StagingBufferPrefetcher::fetch(int file_id, char *dst) {
+    int storage_level = metadata_store->get_storage_level(file_id);
+    if (storage_level == 0) {
+        std::cout << "Fetching from PFS" << std::endl;
+        backend->fetch(file_id, dst);
+    } else {
+        std::cout << "Fetching from local storage level " << storage_level << std::endl;
+        pf_backends[storage_level - 1]->fetch(file_id, dst);
     }
 }

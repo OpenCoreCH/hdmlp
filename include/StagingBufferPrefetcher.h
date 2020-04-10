@@ -3,6 +3,7 @@
 #include <deque>
 #include "Sampler.h"
 #include "PrefetcherBackend.h"
+#include "MetadataStore.h"
 
 
 class StagingBufferPrefetcher {
@@ -15,7 +16,8 @@ public:
                             std::condition_variable* staging_buffer_cond_var,
                             Sampler* sampler,
                             StorageBackend* backend,
-                            PrefetcherBackend** pf_backends);
+                            PrefetcherBackend** pf_backends,
+                            MetadataStore* metadata_store);
     ~StagingBufferPrefetcher();
     void prefetch();
 
@@ -32,7 +34,10 @@ private:
     Sampler* sampler;
     StorageBackend* backend;
     PrefetcherBackend** pf_backends;
+    MetadataStore* metadata_store;
     int node_id;
+
+    void fetch(int file_id, char *dst);
 };
 
 

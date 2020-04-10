@@ -1,15 +1,20 @@
 #include <iostream>
 #include "../include/MemoryPrefetcher.h"
+#include "../include/MetadataStore.h"
 
 MemoryPrefetcher::MemoryPrefetcher(const std::map<std::string, std::string> &backend_options,
-                                   const std::vector<int>::const_iterator prefetch_start,
-                                   const std::vector<int>::const_iterator prefetch_end,
+                                   std::vector<int>::const_iterator prefetch_start,
+                                   std::vector<int>::const_iterator prefetch_end,
                                    unsigned long long int capacity,
-                                   StorageBackend* backend) {
+                                   StorageBackend* backend,
+                                   MetadataStore* metadata_store,
+                                   int storage_level) {
     buffer = new char[capacity];
     this->prefetch_start = prefetch_start;
     this->prefetch_end = prefetch_end;
     this->backend = backend;
+    this->metadata_store = metadata_store;
+    this->storage_level = storage_level;
     num_elems = std::distance(prefetch_start, prefetch_end);
     file_ends = new unsigned long long int[num_elems];
 }
@@ -30,10 +35,9 @@ void MemoryPrefetcher::prefetch() {
         }
         unsigned long file_size = backend->get_file_size(file_id);
         backend->fetch(file_id, buffer + prev_end);
-        std::cout << "Storing at" << prev_end << std::endl;
         buffer_offsets[file_id] = offset;
         file_ends[offset] = prev_end + file_size;
-        //std::cout << *ptr << std::endl;
+        metadata_store->insert_cached_file(storage_level, file_id);
     }
 }
 
