@@ -30,6 +30,7 @@ private:
     StagingBufferPrefetcher* sbf;
     PrefetcherBackend** pf_backends;
     MetadataStore* metadata_store;
+    std::vector<int> prefetch_string;
     std::mutex staging_buffer_mutex;
     std::condition_variable staging_buffer_cond_var;
     std::vector<unsigned long long int> config_capacities;

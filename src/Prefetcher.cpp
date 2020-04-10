@@ -29,20 +29,9 @@ void Prefetcher::init_config() {
 void Prefetcher::init_threads() {
     int classes = config_no_threads.size();
     pf_backends = new PrefetcherBackend*[classes - 1];
-    std::vector<int> prefetch_string;
     std::vector<std::vector<int>::const_iterator> storage_class_ends;
     sampler->get_prefetch_string(node_id, &config_capacities, &prefetch_string, &storage_class_ends);
-    /*for (auto ptr = prefetch_string.begin(); ptr < storage_class_ends[0]; ptr++) {
-        //std::cout << *ptr << std::endl;
-    }
-    for (auto ptr = storage_class_ends[0]; ptr < storage_class_ends[1]; ptr++) {
-        //std::cout << *ptr << std::endl;
-    }
-    for (auto ptr = storage_class_ends[1]; ptr < storage_class_ends[2]; ptr++) {
-        //std::cout << *ptr << std::endl;
-    }*/
     for (int j = 0; j < classes; j++) {
-        std::cout << j << std::endl;
         int no_storage_class_threads = config_no_threads[j];
         std::vector<std::thread> storage_class_threads;
         for (int k = 0; k < no_storage_class_threads; k++) {

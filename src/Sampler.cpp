@@ -29,24 +29,16 @@ Sampler::Sampler(StorageBackend* backend, // NOLINT(cert-msc32-c,cert-msc51-cpp)
     node_local_batch_size = batch_size / n + (batch_size % n != 0);
 
     random_engine.seed(seed);
-    shuffle_sequence(&access_sequence, false);
+    shuffle_sequence(&access_sequence);
 }
 
 /**
  * Shuffle the provided sequence (vector).
  *
  * @param vec Pointer to vector that is shuffled
- * @param restore_random_state If this param is set to true, random_engine will be restored after shuffling. This is used
- * for looking ahead without changing the random state (i.e. for getting the access frequency in the beginning)
  */
-void Sampler::shuffle_sequence(std::vector<int>* vec, bool restore_random_state) {
-    if (restore_random_state) {
-        std::default_random_engine engine_copy = random_engine;
-        std::shuffle(vec->begin(), vec->end(), random_engine);
-        random_engine = engine_copy;
-    } else {
-        std::shuffle(vec->begin(), vec->end(), random_engine);
-    }
+void Sampler::shuffle_sequence(std::vector<int>* vec) {
+    std::shuffle(vec->begin(), vec->end(), random_engine);
 }
 
 /**
@@ -79,12 +71,14 @@ void Sampler::get_node_access_string_for_seq(std::vector<int>* seq, int node_id,
 }
 
 void Sampler::get_access_frequency(std::map<int, int>* access_freq, int node_id, int lookahead) {
+    std::default_random_engine engine_copy = random_engine;
     std::vector<int> curr_access_seq = access_sequence;
     get_access_frequency_for_seq(&curr_access_seq, access_freq, node_id);
     for (int i = 1; i < lookahead; i++) {
-        shuffle_sequence(&curr_access_seq, true);
+        shuffle_sequence(&curr_access_seq);
         get_access_frequency_for_seq(&curr_access_seq, access_freq, node_id);
     }
+    random_engine = engine_copy;
 }
 
 
@@ -139,5 +133,5 @@ void Sampler::get_access_frequency_for_seq(std::vector<int>* seq, std::map<int, 
 }
 
 void Sampler::advance_batch() {
-    shuffle_sequence(&access_sequence, false);
+    shuffle_sequence(&access_sequence);
 }
