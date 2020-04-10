@@ -2,6 +2,7 @@
 #define HDMLP_STAGINGBUFFERPREFETCHER_H
 #include <deque>
 #include "Sampler.h"
+#include "PrefetcherBackend.h"
 
 
 class StagingBufferPrefetcher {
@@ -13,7 +14,8 @@ public:
                             std::mutex* staging_buffer_mutex,
                             std::condition_variable* staging_buffer_cond_var,
                             Sampler* sampler,
-                            StorageBackend* backend);
+                            StorageBackend* backend,
+                            PrefetcherBackend** pf_backends);
     ~StagingBufferPrefetcher();
     void prefetch();
 
@@ -29,6 +31,7 @@ private:
     std::condition_variable* staging_buffer_cond_var;
     Sampler* sampler;
     StorageBackend* backend;
+    PrefetcherBackend** pf_backends;
     int node_id;
 };
 

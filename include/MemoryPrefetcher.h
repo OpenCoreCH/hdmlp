@@ -17,10 +17,12 @@ public:
                               StorageBackend* backend);
     ~MemoryPrefetcher() override;
     void prefetch() override;
+    void fetch(int file_id, char *dst) override;
 
 private:
     char* buffer;
     unsigned long long int* file_ends;
+    std::map<int, int> buffer_offsets;
     StorageBackend* backend;
     std::vector<int>::const_iterator prefetch_start;
     std::vector<int>::const_iterator prefetch_end;

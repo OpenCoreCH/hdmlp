@@ -11,7 +11,8 @@ public:
     std::string get_label(int file_id) override;
     int get_length() override;
     unsigned long get_file_size(int file_id) override;
-    void fetch(int file_id, char *dst, unsigned long entry_size_hint) override;
+    void fetch(int file_id, char *dst) override;
+
 private:
     std::string path;
     std::map<int, std::string> label_mappings;

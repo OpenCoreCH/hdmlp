@@ -27,16 +27,7 @@ void Prefetcher::init_config() {
 }
 
 void Prefetcher::init_staging_buffer() {
-    unsigned long long int staging_buffer_capacity = config_capacities[0];
-    staging_buffer = new char[staging_buffer_capacity];
-    sbf = new StagingBufferPrefetcher(staging_buffer,
-                                      staging_buffer_capacity,
-                                      node_id,
-                                      &file_ends,
-                                      &staging_buffer_mutex,
-                                      &staging_buffer_cond_var,
-                                      sampler,
-                                      backend);
+
 }
 
 void Prefetcher::init_threads() {
@@ -60,6 +51,17 @@ void Prefetcher::init_threads() {
         std::vector<std::thread> storage_class_threads;
         for (int k = 0; k < no_storage_class_threads; k++) {
             if (j == 0) {
+                unsigned long long int staging_buffer_capacity = config_capacities[0];
+                staging_buffer = new char[staging_buffer_capacity];
+                sbf = new StagingBufferPrefetcher(staging_buffer,
+                                                  staging_buffer_capacity,
+                                                  node_id,
+                                                  &file_ends,
+                                                  &staging_buffer_mutex,
+                                                  &staging_buffer_cond_var,
+                                                  sampler,
+                                                  backend,
+                                                  pf_backends);
                 std::thread thread(&StagingBufferPrefetcher::prefetch, std::ref(*sbf));
                 storage_class_threads.push_back(std::move(thread));
             } else {

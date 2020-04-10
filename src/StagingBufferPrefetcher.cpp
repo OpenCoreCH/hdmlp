@@ -10,7 +10,8 @@ StagingBufferPrefetcher::StagingBufferPrefetcher(char *staging_buffer,
                                                  std::mutex* staging_buffer_mutex,
                                                  std::condition_variable* staging_buffer_cond_var,
                                                  Sampler* sampler,
-                                                 StorageBackend* backend) {
+                                                 StorageBackend* backend,
+                                                 PrefetcherBackend** pf_backends) {
     this->buffer_size = buffer_size;
     this->staging_buffer = staging_buffer;
     this->node_id = node_id;
@@ -19,6 +20,7 @@ StagingBufferPrefetcher::StagingBufferPrefetcher(char *staging_buffer,
     this->staging_buffer_cond_var = staging_buffer_cond_var;
     this->sampler = new Sampler(*sampler);
     this->backend = backend;
+    this->pf_backends = pf_backends;
 }
 
 StagingBufferPrefetcher::~StagingBufferPrefetcher() {
@@ -48,7 +50,8 @@ void StagingBufferPrefetcher::prefetch() {
             }
 
             strcpy(staging_buffer + staging_buffer_pointer, label.c_str());
-            backend->fetch(file_id, staging_buffer + staging_buffer_pointer + label.size() + 1, entry_size);
+            //backend->fetch(file_id, staging_buffer + staging_buffer_pointer + label.size() + 1);
+            pf_backends[0]->fetch(file_id, staging_buffer + staging_buffer_pointer + label.size() + 1);
             std::unique_lock<std::mutex> lock(*staging_buffer_mutex);
             file_ends->push_back(staging_buffer_pointer + entry_size);
             staging_buffer_cond_var->notify_one();

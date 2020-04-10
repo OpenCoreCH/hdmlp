@@ -16,6 +16,7 @@ public:
                                   unsigned long long int capacity,
                                   StorageBackend* backend);
     void prefetch() override;
+    void fetch(int file_id, char *dst) override;
 };
 
 

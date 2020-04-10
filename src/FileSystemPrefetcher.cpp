@@ -12,3 +12,7 @@ FileSystemPrefetcher::FileSystemPrefetcher(const std::map<std::string, std::stri
 void FileSystemPrefetcher::prefetch() {
     std::cout << "FileSystemPrefetcher::prefetch called" << std::endl;
 }
+
+void FileSystemPrefetcher::fetch(int file_id, char *dst) {
+
+}

@@ -29,9 +29,22 @@ void MemoryPrefetcher::prefetch() {
             prev_end = file_ends[offset - 1];
         }
         unsigned long file_size = backend->get_file_size(file_id);
-        backend->fetch(file_id, buffer + prev_end, file_size);
+        backend->fetch(file_id, buffer + prev_end);
         std::cout << "Storing at" << prev_end << std::endl;
+        buffer_offsets[file_id] = offset;
         file_ends[offset] = prev_end + file_size;
         //std::cout << *ptr << std::endl;
     }
+}
+
+void MemoryPrefetcher::fetch(int file_id, char *dst) {
+    int offset = buffer_offsets[file_id];
+    unsigned long long start;
+    unsigned long long end = file_ends[offset];
+    if (offset == 0) {
+        start = 0;
+    } else {
+        start = file_ends[offset - 1];
+    }
+    memcpy(dst, buffer + start, end - start);
 }
