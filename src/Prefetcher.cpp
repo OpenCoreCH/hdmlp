@@ -12,7 +12,7 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidel
                        int distr_scheme,
                        bool drop_last_batch,
                        int seed) {
-    int n = 2;
+    int n = 1;
     backend = new FileSystemBackend(dataset_path);
     sampler = new Sampler(backend, n, batch_size, epochs, distr_scheme, drop_last_batch, seed);
     init_config();
@@ -45,16 +45,17 @@ void Prefetcher::init_threads() {
     std::vector<int> prefetch_string;
     std::vector<std::vector<int>::const_iterator> storage_class_ends;
     sampler->get_prefetch_string(node_id, &config_capacities, &prefetch_string, &storage_class_ends);
-    for (auto ptr = prefetch_string.begin(); ptr < storage_class_ends[0]; ptr++) {
-        std::cout << *ptr << std::endl;
+    /*for (auto ptr = prefetch_string.begin(); ptr < storage_class_ends[0]; ptr++) {
+        //std::cout << *ptr << std::endl;
     }
     for (auto ptr = storage_class_ends[0]; ptr < storage_class_ends[1]; ptr++) {
         //std::cout << *ptr << std::endl;
     }
     for (auto ptr = storage_class_ends[1]; ptr < storage_class_ends[2]; ptr++) {
         //std::cout << *ptr << std::endl;
-    }
+    }*/
     for (int j = 0; j < classes; j++) {
+        std::cout << j << std::endl;
         int no_storage_class_threads = config_no_threads[j];
         std::vector<std::thread> storage_class_threads;
         for (int k = 0; k < no_storage_class_threads; k++) {
@@ -84,12 +85,12 @@ void Prefetcher::init_threads() {
     }
 }
 
-int Prefetcher::get_next_file_end() {
+unsigned long long int Prefetcher::get_next_file_end() {
     std::unique_lock<std::mutex> lock(staging_buffer_mutex);
     while (file_ends.empty()) {
         staging_buffer_cond_var.wait(lock);
     }
-    int file_end = file_ends.front();
+    unsigned long long int file_end = file_ends.front();
     file_ends.pop_front();
     return file_end;
 }

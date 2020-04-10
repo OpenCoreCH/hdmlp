@@ -39,7 +39,7 @@ int length(int job_id) {
     return pf[job_id]->get_dataset_length();
 }
 
-int get_next_file_end(int job_id) {
+unsigned long long int get_next_file_end(int job_id) {
     return pf[job_id]->get_next_file_end();
 }
 

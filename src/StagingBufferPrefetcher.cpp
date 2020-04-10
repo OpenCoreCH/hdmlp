@@ -6,7 +6,7 @@
 StagingBufferPrefetcher::StagingBufferPrefetcher(char *staging_buffer,
                                                  unsigned long long int buffer_size,
                                                  int node_id,
-                                                 std::deque<int>* file_ends,
+                                                 std::deque<unsigned long long int> *file_ends,
                                                  std::mutex* staging_buffer_mutex,
                                                  std::condition_variable* staging_buffer_cond_var,
                                                  Sampler* sampler,

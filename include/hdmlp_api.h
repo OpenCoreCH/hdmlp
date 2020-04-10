@@ -16,7 +16,7 @@ extern "C" {
 
     int length(int job_id);
 
-    int get_next_file_end(int job_id);
+    unsigned long long int get_next_file_end(int job_id);
 
     void destroy(int job_id);
 };
