@@ -15,7 +15,15 @@ public:
                               std::vector<int>::const_iterator prefetch_end,
                               unsigned long long int capacity,
                               StorageBackend* backend);
+    ~MemoryPrefetcher() override;
     void prefetch() override;
+
+private:
+    char* buffer;
+    unsigned long long int* file_ends;
+    std::vector<int>::const_iterator prefetch_start;
+    std::vector<int>::const_iterator prefetch_end;
+    int num_elems;
 };
 
 
