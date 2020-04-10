@@ -47,7 +47,8 @@ void Configuration::get_storage_classes(std::vector<unsigned long long int> *cap
     int count = storage_classes.getLength();
     for (int i = 0; i < count; i++) {
         const libconfig::Setting& storage_class = storage_classes[i];
-        int capacity = storage_class.lookup("capacity");
+        int config_capacity = storage_class.lookup("capacity");
+        unsigned long long capacity = config_capacity;
         capacities->push_back(capacity * 1024 * 1024);
         int no_threads = storage_class.lookup("threads");
         threads->push_back(no_threads);

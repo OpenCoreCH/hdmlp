@@ -11,18 +11,16 @@
 
 class MemoryPrefetcher : public PrefetcherBackend {
 public:
-    explicit MemoryPrefetcher(const std::map<std::string, std::string> &backend_options,
+    MemoryPrefetcher(std::map<std::string, std::string> &backend_options,
                               std::vector<int>::const_iterator prefetch_start,
                               std::vector<int>::const_iterator prefetch_end,
-                              unsigned long long int capacity,
-                              StorageBackend* backend,
-                              MetadataStore* metadata_store,
-                              int storage_level);
+                              unsigned long long int capacity, StorageBackend* backend, MetadataStore* metadata_store,
+                              int storage_level, bool alloc_buffer);
     ~MemoryPrefetcher() override;
     void prefetch() override;
     void fetch(int file_id, char *dst) override;
 
-private:
+protected:
     char* buffer;
     unsigned long long int* file_ends;
     std::map<int, int> buffer_offsets;
@@ -32,6 +30,8 @@ private:
     std::vector<int>::const_iterator prefetch_end;
     int num_elems;
     int storage_level;
+    unsigned long long capacity;
+    bool buffer_allocated = false;
 };
 
 

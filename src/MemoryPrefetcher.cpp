@@ -2,30 +2,34 @@
 #include "../include/MemoryPrefetcher.h"
 #include "../include/MetadataStore.h"
 
-MemoryPrefetcher::MemoryPrefetcher(const std::map<std::string, std::string> &backend_options,
+MemoryPrefetcher::MemoryPrefetcher(std::map<std::string, std::string> &backend_options,
                                    std::vector<int>::const_iterator prefetch_start,
                                    std::vector<int>::const_iterator prefetch_end,
-                                   unsigned long long int capacity,
-                                   StorageBackend* backend,
+                                   unsigned long long int capacity, StorageBackend* backend,
                                    MetadataStore* metadata_store,
-                                   int storage_level) {
-    buffer = new char[capacity];
+                                   int storage_level, bool alloc_buffer) {
+    if (alloc_buffer) {
+        buffer = new char[capacity];
+        buffer_allocated = true;
+    }
     this->prefetch_start = prefetch_start;
     this->prefetch_end = prefetch_end;
     this->backend = backend;
     this->metadata_store = metadata_store;
     this->storage_level = storage_level;
+    this->capacity = capacity;
     num_elems = std::distance(prefetch_start, prefetch_end);
     file_ends = new unsigned long long int[num_elems];
 }
 
 MemoryPrefetcher::~MemoryPrefetcher() {
-    delete[] buffer;
+    if (buffer_allocated) {
+        delete[] buffer;
+    }
     delete[] file_ends;
 }
 
 void MemoryPrefetcher::prefetch() {
-    std::cout << "MemoryPrefetcher::prefetch called" << std::endl;
     for (auto ptr = prefetch_start; ptr < prefetch_end; ptr++) {
         int offset = std::distance(prefetch_start, ptr);
         int file_id = *ptr;
