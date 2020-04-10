@@ -4,7 +4,7 @@
 #include "../include/StagingBufferPrefetcher.h"
 
 StagingBufferPrefetcher::StagingBufferPrefetcher(char *staging_buffer,
-                                                 int buffer_size,
+                                                 unsigned long long int buffer_size,
                                                  int node_id,
                                                  std::deque<int>* file_ends,
                                                  std::mutex* staging_buffer_mutex,

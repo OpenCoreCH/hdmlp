@@ -23,14 +23,14 @@ public:
     int get_dataset_length();
 
 private:
-    char* staging_buffer;
+    char* staging_buffer{};
     StorageBackend* backend;
     Sampler* sampler;
-    StagingBufferPrefetcher* sbf;
+    StagingBufferPrefetcher* sbf{};
     PrefetcherBackend** pf_backends{};
     std::mutex staging_buffer_mutex;
     std::condition_variable staging_buffer_cond_var;
-    std::vector<int> config_capacities;
+    std::vector<unsigned long long int> config_capacities;
     std::vector<int> config_no_threads;
     std::vector<std::string> config_pf_backends;
     std::vector<std::map<std::string, std::string>> config_pf_backend_options;
@@ -41,6 +41,7 @@ private:
     int node_id = 0;
 
     void init_config();
+    void init_staging_buffer();
     void init_threads();
 };
 

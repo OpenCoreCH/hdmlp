@@ -11,7 +11,7 @@ class Sampler {
 public:
     int epochs;
 
-    Sampler(int count,
+    Sampler(StorageBackend* backend,
             int n,
             int batch_size,
             int epochs,
@@ -20,11 +20,16 @@ public:
             int seed);
 
     void get_node_access_string(int node_id, std::vector<int>* access_string);
+    void get_prefetch_string(int node_id,
+                             const std::vector<unsigned long long int> *capacities,
+                             std::vector<int>* prefetch_string,
+                             std::vector<std::vector<int>::const_iterator>* storage_class_ends);
     void advance_batch();
 
 private:
     std::default_random_engine random_engine;
     std::vector<int> access_sequence;
+    StorageBackend* backend;
     int n;
     int count;
     int batch_size;

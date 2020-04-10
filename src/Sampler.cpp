@@ -1,13 +1,14 @@
 #include <iostream>
 #include "../include/Sampler.h"
 
-Sampler::Sampler(int count, // NOLINT(cert-msc32-c,cert-msc51-cpp)
+Sampler::Sampler(StorageBackend* backend, // NOLINT(cert-msc32-c,cert-msc51-cpp)
                  int n,
                  int batch_size,
                  int epochs,
                  int distr_scheme,
                  bool drop_last_batch,
                  int seed) {
+    count = backend->get_length();
     access_sequence.resize(count);
     for (int i = 0; i < count; i++) {
         access_sequence[i] = i;
@@ -15,8 +16,8 @@ Sampler::Sampler(int count, // NOLINT(cert-msc32-c,cert-msc51-cpp)
     if (seed == 0) {
         seed = std::chrono::system_clock::now().time_since_epoch().count();
     }
+    this->backend = backend;
     this->n = n;
-    this->count = count;
     this->batch_size = batch_size;
     this->distr_scheme = distr_scheme;
     this->epochs = epochs;
@@ -29,11 +30,6 @@ Sampler::Sampler(int count, // NOLINT(cert-msc32-c,cert-msc51-cpp)
 
     random_engine.seed(seed);
     shuffle_sequence(&access_sequence, false);
-    std::map<int, int> access_freq;
-    //get_access_frequency(&access_freq, 0, epochs);
-    for (const auto &pair : access_freq) {
-        //std::cout << pair.first << " = " << pair.second << std::endl;
-    }
 }
 
 /**
@@ -88,6 +84,45 @@ void Sampler::get_access_frequency(std::map<int, int>* access_freq, int node_id,
     for (int i = 1; i < lookahead; i++) {
         shuffle_sequence(&curr_access_seq, true);
         get_access_frequency_for_seq(&curr_access_seq, access_freq, node_id);
+    }
+}
+
+
+void Sampler::get_prefetch_string(int node_id,
+                                  const std::vector<unsigned long long int> *capacities,
+                                  std::vector<int> *prefetch_string,
+                                  std::vector<std::vector<int>::const_iterator>* storage_class_ends) {
+    std::map<int, int> access_freq;
+    get_access_frequency(&access_freq, node_id, epochs);
+    std::vector<std::pair<int, int>> access_freq_vec;
+    access_freq_vec.reserve(access_freq.size());
+    for (const auto &pair : access_freq) {
+        access_freq_vec.emplace_back(pair);
+    }
+    sort(access_freq_vec.begin(), access_freq_vec.end(), [=](std::pair<int, int>& a, std::pair<int, int>& b) {
+             return a.second > b.second;
+         }
+    );
+    prefetch_string->reserve(access_freq_vec.size());
+    unsigned long long curr_size = 0;
+    int num_storage_classes = capacities->size();
+    int curr_storage_class = 0;
+    for (const auto &pair : access_freq_vec) {
+        unsigned long size = backend->get_entry_size(pair.first);
+        if (curr_size + size > (*capacities)[curr_storage_class]) {
+            storage_class_ends->push_back(prefetch_string->end());
+            if (curr_storage_class < num_storage_classes - 1) {
+                curr_storage_class += 1;
+                curr_size = 0;
+            } else {
+                break;
+            }
+        }
+        prefetch_string->emplace_back(pair.first);
+        curr_size += size;
+    }
+    if (storage_class_ends->size() < num_storage_classes) {
+        storage_class_ends->push_back(prefetch_string->end());
     }
 }
 

@@ -10,7 +10,7 @@ public:
     explicit Configuration(const std::string& config_path);
     std::string get_string_entry(const std::string& key);
     int get_int_entry(const std::string& key);
-    void get_storage_classes(std::vector<int> *capacities,
+    void get_storage_classes(std::vector<unsigned long long int> *capacities,
                              std::vector<int> *threads,
                              std::vector<std::map<int, int>> *bandwidths,
                              std::vector<std::string>* pf_backends,

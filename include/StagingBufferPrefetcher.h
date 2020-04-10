@@ -7,7 +7,7 @@
 class StagingBufferPrefetcher {
 public:
     StagingBufferPrefetcher(char* staging_buffer,
-                            int buffer_size,
+                            unsigned long long int buffer_size,
                             int node_id,
                             std::deque<int>* file_ends,
                             std::mutex* staging_buffer_mutex,
@@ -18,7 +18,7 @@ public:
     void prefetch();
 
 private:
-    int buffer_size;
+    unsigned long long int buffer_size;
     int prefetch_batch = 0;
     int prefetch_offset = 0;
     unsigned long staging_buffer_pointer = 0;

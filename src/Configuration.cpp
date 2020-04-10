@@ -37,7 +37,7 @@ int Configuration::get_int_entry(const std::string& key) {
     return val;
 }
 
-void Configuration::get_storage_classes(std::vector<int>* capacities,
+void Configuration::get_storage_classes(std::vector<unsigned long long int> *capacities,
                                         std::vector<int>* threads,
                                         std::vector<std::map<int, int>>* bandwidths,
                                         std::vector<std::string>* pf_backends,
@@ -48,7 +48,7 @@ void Configuration::get_storage_classes(std::vector<int>* capacities,
     for (int i = 0; i < count; i++) {
         const libconfig::Setting& storage_class = storage_classes[i];
         int capacity = storage_class.lookup("capacity");
-        capacities->push_back(capacity);
+        capacities->push_back(capacity * 1024 * 1024);
         int no_threads = storage_class.lookup("threads");
         threads->push_back(no_threads);
         const libconfig::Setting& bandwidth = storage_class.lookup("bandwidth");

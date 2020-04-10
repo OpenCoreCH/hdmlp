@@ -6,26 +6,17 @@
 #include "../include/PrefetcherBackendFactory.h"
 
 
-Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidelines-pro-type-member-init)
+Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
                        int batch_size,
                        int epochs,
                        int distr_scheme,
                        bool drop_last_batch,
                        int seed) {
-    int n = 1;
+    int n = 2;
     backend = new FileSystemBackend(dataset_path);
-    sampler = new Sampler(backend->get_length(), n, batch_size, epochs, distr_scheme, drop_last_batch, seed);
+    sampler = new Sampler(backend, n, batch_size, epochs, distr_scheme, drop_last_batch, seed);
     init_config();
-    int staging_buffer_capacity = config_capacities[0] * 1024 * 1024;
-    staging_buffer = new char[staging_buffer_capacity];
-    sbf = new StagingBufferPrefetcher(staging_buffer,
-                                      staging_buffer_capacity,
-                                      node_id,
-                                      &file_ends,
-                                      &staging_buffer_mutex,
-                                      &staging_buffer_cond_var,
-                                      sampler,
-                                      backend);
+    init_staging_buffer();
     init_threads();
 }
 
@@ -35,10 +26,34 @@ void Prefetcher::init_config() {
     config.get_pfs_bandwidth(&config_pfs_bandwidth);
 }
 
+void Prefetcher::init_staging_buffer() {
+    unsigned long long int staging_buffer_capacity = config_capacities[0];
+    staging_buffer = new char[staging_buffer_capacity];
+    sbf = new StagingBufferPrefetcher(staging_buffer,
+                                      staging_buffer_capacity,
+                                      node_id,
+                                      &file_ends,
+                                      &staging_buffer_mutex,
+                                      &staging_buffer_cond_var,
+                                      sampler,
+                                      backend);
+}
 
 void Prefetcher::init_threads() {
     int classes = config_no_threads.size();
     pf_backends = new PrefetcherBackend*[classes - 1];
+    std::vector<int> prefetch_string;
+    std::vector<std::vector<int>::const_iterator> storage_class_ends;
+    sampler->get_prefetch_string(node_id, &config_capacities, &prefetch_string, &storage_class_ends);
+    for (auto ptr = prefetch_string.begin(); ptr < storage_class_ends[0]; ptr++) {
+        std::cout << *ptr << std::endl;
+    }
+    for (auto ptr = storage_class_ends[0]; ptr < storage_class_ends[1]; ptr++) {
+        //std::cout << *ptr << std::endl;
+    }
+    for (auto ptr = storage_class_ends[1]; ptr < storage_class_ends[2]; ptr++) {
+        //std::cout << *ptr << std::endl;
+    }
     for (int j = 0; j < classes; j++) {
         int no_storage_class_threads = config_no_threads[j];
         std::vector<std::thread> storage_class_threads;
@@ -47,8 +62,17 @@ void Prefetcher::init_threads() {
                 std::thread thread(&StagingBufferPrefetcher::prefetch, std::ref(*sbf));
                 storage_class_threads.push_back(std::move(thread));
             } else {
+                std::vector<int>::const_iterator prefetch_start;
+                if (j == 1) {
+                    prefetch_start = prefetch_string.begin();
+                } else {
+                    prefetch_start = storage_class_ends[j - 2];
+                }
+                auto prefetch_end = storage_class_ends[j - 1];
                 PrefetcherBackend* pf = PrefetcherBackendFactory::create(config_pf_backends[j - 1],
-                                                                         config_pf_backend_options[j - 1]);
+                                                                         config_pf_backend_options[j - 1],
+                                                                         prefetch_start,
+                                                                         prefetch_end);
                 pf_backends[j - 1] = pf;
                 std::thread thread(&PrefetcherBackend::prefetch, std::ref(*pf));
                 storage_class_threads.push_back(std::move(thread));
@@ -91,3 +115,4 @@ Prefetcher::~Prefetcher() {
     delete sbf;
     delete[] staging_buffer;
 }
+

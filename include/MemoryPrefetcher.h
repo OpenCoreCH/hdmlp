@@ -4,11 +4,14 @@
 
 #include <map>
 #include <string>
+#include <vector>
 #include "PrefetcherBackend.h"
 
 class MemoryPrefetcher : public PrefetcherBackend {
 public:
-    explicit MemoryPrefetcher(const std::map<std::string, std::string>& backend_options);
+    explicit MemoryPrefetcher(const std::map<std::string, std::string> &backend_options,
+                              std::vector<int>::const_iterator prefetch_start,
+                              std::vector<int>::const_iterator prefetch_end);
     void prefetch() override;
 };
 
