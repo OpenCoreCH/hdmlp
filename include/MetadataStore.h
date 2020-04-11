@@ -3,6 +3,7 @@
 
 
 #include <unordered_map>
+#include <shared_mutex>
 
 class MetadataStore {
 public:
@@ -12,6 +13,7 @@ public:
 
 private:
     std::unordered_map<int, int> file_locations;
+    std::shared_timed_mutex file_locations_mutex;
 };
 
 
