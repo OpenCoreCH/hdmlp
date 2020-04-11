@@ -45,7 +45,6 @@ void Prefetcher::init_threads() {
                 sbf = new StagingBufferPrefetcher(staging_buffer,
                                                   staging_buffer_capacity,
                                                   node_id,
-                                                  &file_ends,
                                                   sampler,
                                                   backend,
                                                   pf_backends,

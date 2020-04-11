@@ -11,7 +11,6 @@ public:
     StagingBufferPrefetcher(char* staging_buffer,
                             unsigned long long int buffer_size,
                             int node_id,
-                            std::deque<unsigned long long int>* file_ends,
                             Sampler* sampler,
                             StorageBackend* backend,
                             PrefetcherBackend** pf_backends,
@@ -28,7 +27,7 @@ private:
     unsigned long long int staging_buffer_pointer = 0;
     unsigned long long int read_offset = 0;
     char* staging_buffer;
-    std::deque<unsigned long long int>* file_ends;
+    std::deque<unsigned long long int> file_ends;
     std::mutex staging_buffer_mutex;
     std::mutex read_offset_mutex;
     std::condition_variable staging_buffer_cond_var;

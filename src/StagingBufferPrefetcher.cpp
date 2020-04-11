@@ -6,7 +6,6 @@
 StagingBufferPrefetcher::StagingBufferPrefetcher(char *staging_buffer,
                                                  unsigned long long int buffer_size,
                                                  int node_id,
-                                                 std::deque<unsigned long long int>* file_ends,
                                                  Sampler* sampler,
                                                  StorageBackend* backend,
                                                  PrefetcherBackend** pf_backends,
@@ -14,7 +13,6 @@ StagingBufferPrefetcher::StagingBufferPrefetcher(char *staging_buffer,
     this->buffer_size = buffer_size;
     this->staging_buffer = staging_buffer;
     this->node_id = node_id;
-    this->file_ends = file_ends;
     this->sampler = new Sampler(*sampler);
     this->backend = backend;
     this->pf_backends = pf_backends;
@@ -58,7 +56,7 @@ void StagingBufferPrefetcher::prefetch() {
             strcpy(staging_buffer + staging_buffer_pointer, label.c_str());
             fetch(file_id, staging_buffer + staging_buffer_pointer + label.size() + 1);
             std::unique_lock<std::mutex> staging_buffer_lock(staging_buffer_mutex);
-            file_ends->push_back(staging_buffer_pointer + entry_size);
+            file_ends.push_back(staging_buffer_pointer + entry_size);
             staging_buffer_pointer += entry_size;
             staging_buffer_cond_var.notify_one();
             staging_buffer_lock.unlock();
@@ -90,10 +88,10 @@ void StagingBufferPrefetcher::advance_read_offset(unsigned long long int new_off
 
 unsigned long long int StagingBufferPrefetcher::get_next_file_end() {
     std::unique_lock<std::mutex> staging_buffer_lock(staging_buffer_mutex);
-    while (file_ends->empty()) {
+    while (file_ends.empty()) {
         staging_buffer_cond_var.wait(staging_buffer_lock);
     }
-    unsigned long long int file_end = file_ends->front();
-    file_ends->pop_front();
+    unsigned long long int file_end = file_ends.front();
+    file_ends.pop_front();
     return file_end;
 }
