@@ -36,7 +36,7 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
         while (true) {
             std::unique_lock<std::mutex> crit_section_lock(prefetcher_mutex);
             while (waiting_for_consumption) {
-                std::cout << thread_id << ": Waiting for consumption " << std::endl;
+                //std::cout << thread_id << ": Waiting for consumption " << std::endl;
                 consumption_waiting_cond_var.wait(crit_section_lock);
             }
             int j = prefetch_offset;
@@ -140,14 +140,14 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
 }
 
 void StagingBufferPrefetcher::fetch(int file_id, char *dst) {
-    backend->fetch(file_id, dst);
-    return;
+    //backend->fetch(file_id, dst);
+    //return;
     int storage_level = metadata_store->get_storage_level(file_id);
     if (storage_level == 0) {
-        //std::cout << "Fetching from PFS, file id: " << file_id << std::endl;
+        std::cout << "Fetching from PFS, file id: " << file_id << std::endl;
         backend->fetch(file_id, dst);
     } else {
-        //std::cout << "Fetching from local storage level " << storage_level << std::endl;
+        std::cout << "Fetching from local storage level " << storage_level << std::endl;
         pf_backends[storage_level - 1]->fetch(file_id, dst);
     }
 }

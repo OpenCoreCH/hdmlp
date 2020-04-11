@@ -17,7 +17,8 @@ public:
                int epochs,
                int distr_scheme,
                bool drop_last_batch,
-               int seed);
+               int seed,
+               int job_id);
     ~Prefetcher();
     char* get_staging_buffer();
     unsigned long long int get_next_file_end();
@@ -40,6 +41,7 @@ private:
     std::map<int, int> config_pfs_bandwidth;
     std::vector<std::vector<std::thread>> threads;
     int node_id = 0;
+    int job_id;
 
     void init_config();
     void init_threads();

@@ -11,8 +11,10 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidel
                        int epochs,
                        int distr_scheme,
                        bool drop_last_batch,
-                       int seed) {
+                       int seed,
+                       int job_id) {
     int n = 1;
+    this->job_id = job_id;
     backend = new FileSystemBackend(dataset_path);
     sampler = new Sampler(backend, n, batch_size, epochs, distr_scheme, drop_last_batch, seed);
     metadata_store = new MetadataStore;
@@ -70,7 +72,9 @@ void Prefetcher::init_threads() {
                                                                              prefetch_end,
                                                                              backend,
                                                                              metadata_store,
-                                                                             j);
+                                                                             j,
+                                                                             no_storage_class_threads,
+                                                                             job_id);
                     pf_backends[j - 1] = pf;
                 }
                 std::thread thread(&PrefetcherBackend::prefetch, std::ref(*pf_backends[j - 1]));

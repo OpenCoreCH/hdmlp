@@ -100,7 +100,7 @@ void Sampler::get_prefetch_string(int node_id,
     prefetch_string->reserve(access_freq_vec.size());
     unsigned long long curr_size = 0;
     int num_storage_classes = capacities->size();
-    int curr_storage_class = 0;
+    int curr_storage_class = 1;
     for (const auto &pair : access_freq_vec) {
         unsigned long size = backend->get_file_size(pair.first);
         if (curr_size + size > (*capacities)[curr_storage_class]) {
@@ -115,7 +115,7 @@ void Sampler::get_prefetch_string(int node_id,
         prefetch_string->emplace_back(pair.first);
         curr_size += size;
     }
-    if (storage_class_ends->size() < num_storage_classes) {
+    if (storage_class_ends->size() < num_storage_classes - 1) {
         storage_class_ends->push_back(prefetch_string->end());
     }
 }

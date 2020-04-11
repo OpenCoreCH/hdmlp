@@ -11,9 +11,14 @@ FileSystemPrefetcher::FileSystemPrefetcher(std::map<std::string, std::string> &b
                                            std::vector<int>::const_iterator prefetch_start,
                                            std::vector<int>::const_iterator prefetch_end,
                                            unsigned long long int capacity,
-                                           StorageBackend* backend, MetadataStore* metadata_store, int storage_level) :
+                                           StorageBackend* backend, MetadataStore* metadata_store, int storage_level,
+                                           int job_id) :
                                            MemoryPrefetcher(backend_options, prefetch_start, prefetch_end, capacity, backend, metadata_store, storage_level, false) {
     path = backend_options["path"];
+    if (path.back() != '/') {
+        path += '/';
+    }
+    path += std::to_string(job_id);
 
     fd = open(path.c_str(), O_RDWR | O_CREAT | O_TRUNC, (mode_t)0600); // NOLINT(hicpp-signed-bitwise)
     lseek(fd, capacity - 1, SEEK_SET);

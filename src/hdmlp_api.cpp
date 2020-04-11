@@ -26,7 +26,8 @@ int setup(wchar_t * dataset_path,
                epochs,
                distr_scheme,
                drop_last_batch,
-               seed);
+               seed,
+               job_id);
     return job_id;
 }
 

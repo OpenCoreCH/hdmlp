@@ -17,7 +17,8 @@ public:
                                   unsigned long long int capacity,
                                   StorageBackend* backend,
                                   MetadataStore* metadata_store,
-                                  int storage_level);
+                                  int storage_level,
+                                  int job_id);
     ~FileSystemPrefetcher() override;
 
 private:
