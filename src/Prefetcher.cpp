@@ -46,8 +46,6 @@ void Prefetcher::init_threads() {
                                                   staging_buffer_capacity,
                                                   node_id,
                                                   &file_ends,
-                                                  &staging_buffer_mutex,
-                                                  &staging_buffer_cond_var,
                                                   sampler,
                                                   backend,
                                                   pf_backends,
@@ -80,13 +78,11 @@ void Prefetcher::init_threads() {
 }
 
 unsigned long long int Prefetcher::get_next_file_end() {
-    std::unique_lock<std::mutex> lock(staging_buffer_mutex);
-    while (file_ends.empty()) {
-        staging_buffer_cond_var.wait(lock);
-    }
-    unsigned long long int file_end = file_ends.front();
-    file_ends.pop_front();
-    return file_end;
+    return sbf->get_next_file_end();
+}
+
+void Prefetcher::notify_data_consumed(unsigned long long int until_offset) {
+    sbf->advance_read_offset(until_offset);
 }
 
 int Prefetcher::get_dataset_length() {

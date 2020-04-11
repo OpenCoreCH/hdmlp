@@ -21,6 +21,7 @@ public:
     ~Prefetcher();
     char* get_staging_buffer();
     unsigned long long int get_next_file_end();
+    void notify_data_consumed(unsigned long long int until_offset);
     int get_dataset_length();
 
 private:
@@ -31,8 +32,6 @@ private:
     PrefetcherBackend** pf_backends;
     MetadataStore* metadata_store;
     std::vector<int> prefetch_string;
-    std::mutex staging_buffer_mutex;
-    std::condition_variable staging_buffer_cond_var;
     std::vector<unsigned long long int> config_capacities;
     std::vector<int> config_no_threads;
     std::vector<std::string> config_pf_backends;

@@ -4,6 +4,7 @@
 extern "C" {
     Prefetcher* pf[PARALLEL_JOBS_LIMIT];
     bool used_map[PARALLEL_JOBS_LIMIT] = { false };
+    unsigned long long int consumed_until[PARALLEL_JOBS_LIMIT] = { 0 };
 
     int setup(wchar_t * dataset_path,
               int batch_size,

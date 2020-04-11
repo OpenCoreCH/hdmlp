@@ -40,7 +40,10 @@ int length(int job_id) {
 }
 
 unsigned long long int get_next_file_end(int job_id) {
-    return pf[job_id]->get_next_file_end();
+    pf[job_id]->notify_data_consumed(consumed_until[job_id]);
+    unsigned long long int file_end = pf[job_id]->get_next_file_end();
+    consumed_until[job_id] = file_end;
+    return file_end;
 }
 
 void destroy(int job_id) {
