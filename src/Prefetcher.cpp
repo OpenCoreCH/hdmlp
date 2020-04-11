@@ -12,7 +12,7 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidel
                        int distr_scheme,
                        bool drop_last_batch,
                        int seed) {
-    int n = 2;
+    int n = 1;
     backend = new FileSystemBackend(dataset_path);
     sampler = new Sampler(backend, n, batch_size, epochs, distr_scheme, drop_last_batch, seed);
     metadata_store = new MetadataStore;
@@ -40,35 +40,40 @@ void Prefetcher::init_threads() {
         std::vector<std::thread> storage_class_threads;
         for (int k = 0; k < no_storage_class_threads; k++) {
             if (j == 0) {
-                unsigned long long int staging_buffer_capacity = config_capacities[0];
-                staging_buffer = new char[staging_buffer_capacity];
-                sbf = new StagingBufferPrefetcher(staging_buffer,
-                                                  staging_buffer_capacity,
-                                                  node_id,
-                                                  sampler,
-                                                  backend,
-                                                  pf_backends,
-                                                  metadata_store);
-                std::thread thread(&StagingBufferPrefetcher::prefetch, std::ref(*sbf));
+                if (k == 0) {
+                    unsigned long long int staging_buffer_capacity = config_capacities[0];
+                    staging_buffer = new char[staging_buffer_capacity];
+                    sbf = new StagingBufferPrefetcher(staging_buffer,
+                                                      staging_buffer_capacity,
+                                                      node_id,
+                                                      no_storage_class_threads,
+                                                      sampler,
+                                                      backend,
+                                                      pf_backends,
+                                                      metadata_store);
+                }
+                std::thread thread(&StagingBufferPrefetcher::prefetch, std::ref(*sbf), k);
                 storage_class_threads.push_back(std::move(thread));
             } else {
-                std::vector<int>::const_iterator prefetch_start;
-                if (j == 1) {
-                    prefetch_start = prefetch_string.begin();
-                } else {
-                    prefetch_start = storage_class_ends[j - 2];
+                if (k == 0) {
+                    std::vector<int>::const_iterator prefetch_start;
+                    if (j == 1) {
+                        prefetch_start = prefetch_string.begin();
+                    } else {
+                        prefetch_start = storage_class_ends[j - 2];
+                    }
+                    auto prefetch_end = storage_class_ends[j - 1];
+                    PrefetcherBackend* pf = PrefetcherBackendFactory::create(config_pf_backends[j - 1],
+                                                                             config_pf_backend_options[j - 1],
+                                                                             config_capacities[j],
+                                                                             prefetch_start,
+                                                                             prefetch_end,
+                                                                             backend,
+                                                                             metadata_store,
+                                                                             j);
+                    pf_backends[j - 1] = pf;
                 }
-                auto prefetch_end = storage_class_ends[j - 1];
-                PrefetcherBackend* pf = PrefetcherBackendFactory::create(config_pf_backends[j - 1],
-                                                                         config_pf_backend_options[j - 1],
-                                                                         config_capacities[j],
-                                                                         prefetch_start,
-                                                                         prefetch_end,
-                                                                         backend,
-                                                                         metadata_store,
-                                                                         j);
-                pf_backends[j - 1] = pf;
-                std::thread thread(&PrefetcherBackend::prefetch, std::ref(*pf));
+                std::thread thread(&PrefetcherBackend::prefetch, std::ref(*pf_backends[j - 1]));
                 storage_class_threads.push_back(std::move(thread));
             }
         }
