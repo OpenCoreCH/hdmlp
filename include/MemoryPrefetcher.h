@@ -28,7 +28,9 @@ protected:
     MetadataStore* metadata_store;
     std::vector<int>::const_iterator prefetch_start;
     std::vector<int>::const_iterator prefetch_end;
+    std::mutex prefetcher_mutex;
     int num_elems;
+    int prefetch_offset = 0;
     int storage_level;
     unsigned long long capacity;
     bool buffer_allocated = false;
