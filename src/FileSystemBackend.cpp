@@ -19,7 +19,7 @@ FileSystemBackend::FileSystemBackend(const std::wstring& path) {
     this->init_mappings();
 }
 
-std::map<int, std::string> FileSystemBackend::get_id_mapping() {
+std::unordered_map<int, std::string> FileSystemBackend::get_id_mapping() {
     return id_mappings;
 }
 

@@ -23,7 +23,7 @@ public:
 protected:
     char* buffer;
     unsigned long long int* file_ends;
-    std::map<int, int> buffer_offsets;
+    std::unordered_map<int, int> buffer_offsets;
     StorageBackend* backend;
     MetadataStore* metadata_store;
     std::vector<int>::const_iterator prefetch_start;
