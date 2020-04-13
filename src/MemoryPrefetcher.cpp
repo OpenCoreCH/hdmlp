@@ -1,4 +1,5 @@
 #include <iostream>
+#include <thread>
 #include "../include/MemoryPrefetcher.h"
 #include "../include/MetadataStore.h"
 
@@ -62,9 +63,11 @@ void MemoryPrefetcher::fetch(int file_id, char *dst) {
 }
 
 char* MemoryPrefetcher::get_location(int file_id, unsigned long* len) {
+    std::unique_lock<std::mutex> crit_section_lock(prefetcher_mutex);
     int offset = buffer_offsets[file_id];
     unsigned long long start = get_file_start(file_id);
     unsigned long long end = file_ends[offset];
+    crit_section_lock.unlock();
     *len = end - start;
     return buffer + start;
 }

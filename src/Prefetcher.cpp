@@ -13,6 +13,7 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidel
                        bool drop_last_batch,
                        int seed,
                        int job_id) {
+    init_config();
     backend = new FileSystemBackend(dataset_path);
     metadata_store = new MetadataStore;
     distr_manager = new DistributedManager(metadata_store, backend);
@@ -23,10 +24,10 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidel
         seed = distr_manager->generate_and_broadcast_seed();
     }
     sampler = new Sampler(backend, n, batch_size, epochs, distr_scheme, drop_last_batch, seed);
-    init_config();
+    sampler->get_prefetch_string(node_id, &config_capacities, &prefetch_string, &storage_class_ends);
+    distr_manager->distribute_prefetch_strings(&prefetch_string, &storage_class_ends, config_no_threads.size());
     init_threads();
     distr_manager->set_prefetcher_backends(pf_backends);
-    distr_manager->distribute_prefetch_strings(&prefetch_string, &storage_class_ends, config_no_threads.size());
     std::thread thread(&DistributedManager::serve, std::ref(*distr_manager));
     distr_threads.push_back(std::move(thread));
 }
@@ -40,12 +41,11 @@ void Prefetcher::init_config() {
 void Prefetcher::init_threads() {
     int classes = config_no_threads.size();
     pf_backends = new PrefetcherBackend*[classes - 1];
-    sampler->get_prefetch_string(node_id, &config_capacities, &prefetch_string, &storage_class_ends);
-    for (int j = 0; j < classes; j++) {
-        if (j > storage_class_ends.size()) {
-            // Only create thread if there is something to prefetch
-            continue;
-        }
+    for (int i = 0; i < classes - 1; i++) {
+        pf_backends[i] = nullptr;
+    }
+    threads.resize(storage_class_ends.size() + 1);
+    for (int j = storage_class_ends.size(); j >= 0; j--) {
         int no_storage_class_threads = config_no_threads[j];
         std::vector<std::thread> storage_class_threads;
         for (int k = 0; k < no_storage_class_threads; k++) {
@@ -60,7 +60,8 @@ void Prefetcher::init_threads() {
                                                       sampler,
                                                       backend,
                                                       pf_backends,
-                                                      metadata_store);
+                                                      metadata_store,
+                                                      distr_manager);
                 }
                 std::thread thread(&StagingBufferPrefetcher::prefetch, std::ref(*sbf), k);
                 storage_class_threads.push_back(std::move(thread));
@@ -89,7 +90,7 @@ void Prefetcher::init_threads() {
                 storage_class_threads.push_back(std::move(thread));
             }
         }
-        threads.push_back(std::move(storage_class_threads));
+        threads[j] = std::move(storage_class_threads);
     }
 }
 

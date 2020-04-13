@@ -35,21 +35,23 @@ int DistributedManager::get_node_id() {
 void DistributedManager::serve() {
     std::cout << "In serve..." << std::endl;
     while (true) {
-        int req_file_id;
+        int req[2];
         MPI_Status status;
-        MPI_Recv(&req_file_id,1, MPI_INT, MPI_ANY_SOURCE, MPI_TAG_UB, MPI_COMM_WORLD, &status);
+        MPI_Recv(&req,2, MPI_INT, MPI_ANY_SOURCE, REQUEST_TAG, MPI_COMM_WORLD, &status);
         int source = status.MPI_SOURCE;
         if (source == node_id) {
             break;
         }
+        int req_file_id = req[0];
+        int answer_tag = req[1];
         int storage_level = metadata_store->get_storage_level(req_file_id);
         if (storage_level > 0) {
-            unsigned long len;
-            char* loc = pf_backends[storage_level]->get_location(req_file_id, &len);
-            MPI_Send(loc, (int) len, MPI_CHAR, source, req_file_id, MPI_COMM_WORLD);
+            unsigned long len = storage_backend->get_file_size(req_file_id);
+            char* loc = pf_backends[storage_level - 1]->get_location(req_file_id, &len);
+            MPI_Send(loc, (int) len, MPI_CHAR, source, answer_tag, MPI_COMM_WORLD);
         } else {
             // Send zero bytes to indicate that file isn't available
-            MPI_Send(nullptr, 0, MPI_CHAR, source, req_file_id, MPI_COMM_WORLD);
+            MPI_Send(nullptr, 0, MPI_CHAR, source, answer_tag, MPI_COMM_WORLD);
         }
     }
 }
@@ -57,12 +59,19 @@ void DistributedManager::serve() {
 /**
  * @return true if fetching was succesful, false otherwise
  */
-bool DistributedManager::fetch(int file_id, char* dst) {
+bool DistributedManager::fetch(int file_id, char* dst, int thread_id) {
     unsigned long file_size = storage_backend->get_file_size(file_id);
-    int from_node = 0;
-    MPI_Send(&file_id, 1, MPI_INT, from_node, MPI_TAG_UB, MPI_COMM_WORLD);
+    int from_node;
+    if (file_availability.count(file_id) != 0) {
+        from_node = file_availability[file_id].node_id;
+    } else {
+        return false;
+    }
+    // Send requested file id and answer tag
+    int req[2] = {file_id, thread_id + 1};
+    MPI_Send(&req, 2, MPI_INT, from_node, REQUEST_TAG, MPI_COMM_WORLD);
     MPI_Status response_status;
-    MPI_Recv(dst, (int) file_size, MPI_CHAR, from_node, file_id, MPI_COMM_WORLD, &response_status);
+    MPI_Recv(dst, (int) file_size, MPI_CHAR, from_node, thread_id + 1, MPI_COMM_WORLD, &response_status);
     int response_length;
     MPI_Get_count(&response_status, MPI_CHAR, &response_length);
     return response_length > 0;
@@ -93,11 +102,12 @@ void DistributedManager::distribute_prefetch_strings(std::vector<int>* local_pre
     MPI_Type_commit(&arr_type);
     MPI_Allgather(&send_data, 1, arr_type, rcv_data, 1, arr_type, MPI_COMM_WORLD);
     parse_received_prefetch_data(rcv_data, arr_size, global_max_size);
-    std::this_thread::sleep_for(std::chrono::milliseconds(node_id * 1000));
+    std::cout << "FILE AVAIL SIZE " << file_availability.size() << std::endl;
+    /*std::this_thread::sleep_for(std::chrono::milliseconds(node_id * 1000));
     for (auto elem : file_availability) {
         std::cout << "File id " << elem.first << " available at node " << elem.second.node_id << " (offset " <<
         elem.second.offset << ") in storage class " << elem.second.storage_class << std::endl;
-    }
+    }*/
 
 }
 
@@ -158,9 +168,9 @@ bool DistributedManager::get_remote_storage_class(int file_id, int* storage_clas
      * Case 2: We're ahead by at least REMOTE_PREFETCH_OFFSET_DIFF in our local prefetch string and can therefore assume that the other node is at least at remote_offset
      * Case 3: We're done prefetching and can therefore assume the other node is as well.
      */
-    if (pf_backends[remote_storage_class] == nullptr ||
-        pf_backends[remote_storage_class]->get_prefetch_offset() > remote_offset + REMOTE_PREFETCH_OFFSET_DIFF ||
-        pf_backends[remote_storage_class]->is_done()) {
+    if (pf_backends[remote_storage_class - 1] == nullptr ||
+        pf_backends[remote_storage_class - 1]->get_prefetch_offset() > remote_offset + REMOTE_PREFETCH_OFFSET_DIFF ||
+        pf_backends[remote_storage_class - 1]->is_done()) {
         *storage_class = remote_storage_class;
         return true;
     }
@@ -168,8 +178,9 @@ bool DistributedManager::get_remote_storage_class(int file_id, int* storage_clas
 }
 
 void DistributedManager::stop_all_threads(int num_threads) {
+    MPI_Barrier(MPI_COMM_WORLD);
     for (int i = 0; i < num_threads; i++) {
-        MPI_Send(nullptr, 0, MPI_CHAR, node_id, MPI_TAG_UB, MPI_COMM_WORLD);
+        MPI_Send(nullptr, 0, MPI_INT, node_id, REQUEST_TAG, MPI_COMM_WORLD);
     }
 }
 

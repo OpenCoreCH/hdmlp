@@ -4,18 +4,14 @@
 #include "Sampler.h"
 #include "PrefetcherBackend.h"
 #include "MetadataStore.h"
+#include "DistributedManager.h"
 
 
 class StagingBufferPrefetcher {
 public:
-    StagingBufferPrefetcher(char* staging_buffer,
-                            unsigned long long int buffer_size,
-                            int node_id,
-                            int no_threads,
-                            Sampler* sampler,
-                            StorageBackend* backend,
-                            PrefetcherBackend** pf_backends,
-                            MetadataStore* metadata_store);
+    StagingBufferPrefetcher(char* staging_buffer, unsigned long long int buffer_size, int node_id, int no_threads,
+                            Sampler* sampler, StorageBackend* backend, PrefetcherBackend** pf_backends,
+                            MetadataStore* metadata_store, DistributedManager* distr_manager);
     ~StagingBufferPrefetcher();
     void prefetch(int thread_id);
     void advance_read_offset(unsigned long long int new_offset);
@@ -41,12 +37,13 @@ private:
     StorageBackend* backend;
     PrefetcherBackend** pf_backends;
     MetadataStore* metadata_store;
+    DistributedManager* distr_manager;
     int node_id;
     int no_threads;
     bool* global_batch_done;
     bool waiting_for_consumption = false;
 
-    void fetch(int file_id, char *dst);
+    void fetch(int file_id, char* dst, int thread_id);
 };
 
 

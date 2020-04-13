@@ -3,14 +3,11 @@
 #include <thread>
 #include "../include/StagingBufferPrefetcher.h"
 
-StagingBufferPrefetcher::StagingBufferPrefetcher(char *staging_buffer,
-                                                 unsigned long long int buffer_size,
-                                                 int node_id,
+StagingBufferPrefetcher::StagingBufferPrefetcher(char* staging_buffer, unsigned long long int buffer_size, int node_id,
                                                  int no_threads,
-                                                 Sampler* sampler,
-                                                 StorageBackend* backend,
+                                                 Sampler* sampler, StorageBackend* backend,
                                                  PrefetcherBackend** pf_backends,
-                                                 MetadataStore* metadata_store) {
+                                                 MetadataStore* metadata_store, DistributedManager* distr_manager) {
     this->buffer_size = buffer_size;
     this->staging_buffer = staging_buffer;
     this->node_id = node_id;
@@ -19,6 +16,7 @@ StagingBufferPrefetcher::StagingBufferPrefetcher(char *staging_buffer,
     this->backend = backend;
     this->pf_backends = pf_backends;
     this->metadata_store = metadata_store;
+    this->distr_manager = distr_manager;
     global_batch_done = new bool[no_threads]();
 }
 
@@ -84,7 +82,7 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
 
 
             strcpy(staging_buffer + local_staging_buffer_pointer, label.c_str());
-            fetch(file_id, staging_buffer + local_staging_buffer_pointer + label.size() + 1);
+            fetch(file_id, staging_buffer + local_staging_buffer_pointer + label.size() + 1, thread_id);
             std::unique_lock<std::mutex> staging_buffer_lock(staging_buffer_mutex);
             // Check if all the previous file ends were inserted to the queue. If not, don't insert, but only set
             // curr_iter_file_ends / curr_iter_file_ends_ready s.t. another thread will insert it
@@ -139,16 +137,23 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
     }
 }
 
-void StagingBufferPrefetcher::fetch(int file_id, char *dst) {
-    //backend->fetch(file_id, dst);
-    //return;
-    int storage_level = metadata_store->get_storage_level(file_id);
-    if (storage_level == 0) {
+void StagingBufferPrefetcher::fetch(int file_id, char* dst, int thread_id) {
+    int remote_storage_level;
+    bool remote_avail = distr_manager->get_remote_storage_class(file_id, &remote_storage_level);
+    int local_storage_level = metadata_store->get_storage_level(file_id);
+    if (remote_avail) {
+        bool remote_success = distr_manager->fetch(file_id, dst, thread_id);
+        if (remote_success) {
+            std::cout << "Successful remote fetch" << std::endl;
+        } else {
+            std::cout << "Unsuccesful remote fetch" << std::endl;
+        }
+    } else if (local_storage_level == 0) {
         //std::cout << "Fetching from PFS, file id: " << file_id << std::endl;
         backend->fetch(file_id, dst);
     } else {
-        //std::cout << "Fetching from local storage level " << storage_level << std::endl;
-        pf_backends[storage_level - 1]->fetch(file_id, dst);
+        //std::cout << "Fetching from local storage level " << local_storage_level << std::endl;
+        pf_backends[local_storage_level - 1]->fetch(file_id, dst);
     }
 }
 

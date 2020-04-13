@@ -4,6 +4,9 @@
 // How many elements do we need to be ahead to decide that a file is available at a remote location, see get_remote_storage_class for details
 #define REMOTE_PREFETCH_OFFSET_DIFF 20
 
+// Tag that is used to indicate MPI requests, shall not be used in responses to requests
+#define REQUEST_TAG 0
+
 #include "MetadataStore.h"
 #include "PrefetcherBackend.h"
 #include "StorageBackend.h"
@@ -18,7 +21,7 @@ public:
     int get_no_nodes();
     int get_node_id();
     void serve();
-    bool fetch(int file_id, char* dst);
+    bool fetch(int file_id, char* dst, int thread_id);
     bool get_remote_storage_class(int file_id, int* storage_class);
     void distribute_prefetch_strings(std::vector<int>* local_prefetch_string,
                                      std::vector<std::vector<int>::const_iterator>* storage_class_ends,
