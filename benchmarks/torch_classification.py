@@ -174,7 +174,7 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Tr
 
 # Top level data directory. Here we assume the format of the directory conforms
 #   to the ImageFolder structure
-data_dir = "/tmp/hymenoptera_data"
+data_dir = "/Volumes/Daten/Daten/Datasets/hymenoptera_data"
 
 # Models to choose from [resnet, alexnet, vgg, squeezenet, densenet, inception]
 model_name = "squeezenet"
@@ -186,7 +186,7 @@ num_classes = 2
 batch_size = 8
 
 # Number of epochs to train for
-num_epochs = 2
+num_epochs = 10
 
 # Flag for feature extracting. When False, we finetune the whole model,
 #   when True we only update the reshaped layer params
