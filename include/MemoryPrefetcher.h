@@ -18,7 +18,8 @@ public:
                               int storage_level, bool alloc_buffer);
     ~MemoryPrefetcher() override;
     void prefetch() override;
-    void fetch(int file_id, char *dst) override;
+    void fetch(int file_id, char* dst) override;
+    char* get_location(int file_id, unsigned long* len) override;
 
 protected:
     char* buffer;
@@ -34,6 +35,8 @@ protected:
     int storage_level;
     unsigned long long capacity;
     bool buffer_allocated = false;
+
+    unsigned long long get_file_start(int file_id);
 };
 
 

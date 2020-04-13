@@ -55,13 +55,27 @@ void MemoryPrefetcher::prefetch() {
 }
 
 void MemoryPrefetcher::fetch(int file_id, char *dst) {
+    unsigned long len;
+    char* loc = get_location(file_id, &len);
+
+    memcpy(dst, loc, len);
+}
+
+char* MemoryPrefetcher::get_location(int file_id, unsigned long* len) {
+    int offset = buffer_offsets[file_id];
+    unsigned long long start = get_file_start(file_id);
+    unsigned long long end = file_ends[offset];
+    *len = end - start;
+    return buffer + start;
+}
+
+unsigned long long MemoryPrefetcher::get_file_start(int file_id) {
     int offset = buffer_offsets[file_id];
     unsigned long long start;
-    unsigned long long end = file_ends[offset];
     if (offset == 0) {
         start = 0;
     } else {
         start = file_ends[offset - 1];
     }
-    memcpy(dst, buffer + start, end - start);
+    return start;
 }
