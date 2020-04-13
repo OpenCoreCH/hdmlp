@@ -1,4 +1,5 @@
 #include <iostream>
+#include <codecvt>
 #include "../include/Prefetcher.h"
 #include "../include/FileSystemBackend.h"
 #include "../include/Configuration.h"
@@ -7,13 +8,14 @@
 
 
 Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
+                       const std::wstring& config_path,
                        int batch_size,
                        int epochs,
                        int distr_scheme,
                        bool drop_last_batch,
                        int seed,
                        int job_id) {
-    init_config();
+    init_config(config_path);
     backend = new FileSystemBackend(dataset_path);
     metadata_store = new MetadataStore;
     distr_manager = new DistributedManager(metadata_store, backend);
@@ -31,8 +33,11 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidel
     init_distr_threads();
 }
 
-void Prefetcher::init_config() {
-    Configuration config("/Volumes/GoogleDrive/Meine Ablage/Dokumente/1 - Schule/1 - ETHZ/6. Semester/Bachelor Thesis/hdmlp/cpp/hdmlp/data/hdmlp.cfg");
+void Prefetcher::init_config(const std::wstring& path) {
+    using type = std::codecvt_utf8<wchar_t>;
+    std::wstring_convert<type, wchar_t> converter;
+    std::string str_path = converter.to_bytes(path);
+    Configuration config(str_path);
     config.get_storage_classes(&config_capacities, &config_no_threads, &config_bandwidths, &config_pf_backends, &config_pf_backend_options);
     config.get_pfs_bandwidth(&config_pfs_bandwidth);
     no_distributed_threads = config.get_no_distributed_threads();

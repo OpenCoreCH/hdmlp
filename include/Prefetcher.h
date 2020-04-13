@@ -14,6 +14,7 @@
 class Prefetcher {
 public:
     Prefetcher(const std::wstring& dataset_path,
+               const std::wstring& config_path,
                int batch_size,
                int epochs,
                int distr_scheme,
@@ -49,7 +50,7 @@ private:
     int job_id;
     int no_distributed_threads;
 
-    void init_config();
+    void init_config(const std::wstring& path);
     void init_threads();
     void init_distr_threads();
 };
