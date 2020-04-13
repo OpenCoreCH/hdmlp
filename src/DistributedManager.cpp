@@ -32,14 +32,16 @@ int DistributedManager::get_node_id() {
     return node_id;
 }
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmissing-noreturn"
 void DistributedManager::serve() {
+    std::cout << "In serve..." << std::endl;
     while (true) {
         int req_file_id;
         MPI_Status status;
         MPI_Recv(&req_file_id,1, MPI_INT, MPI_ANY_SOURCE, MPI_TAG_UB, MPI_COMM_WORLD, &status);
         int source = status.MPI_SOURCE;
+        if (source == node_id) {
+            break;
+        }
         int storage_level = metadata_store->get_storage_level(req_file_id);
         if (storage_level > 0) {
             unsigned long len;
@@ -51,8 +53,10 @@ void DistributedManager::serve() {
         }
     }
 }
-#pragma clang diagnostic pop
 
+/**
+ * @return true if fetching was succesful, false otherwise
+ */
 bool DistributedManager::fetch(int file_id, char* dst) {
     unsigned long file_size = storage_backend->get_file_size(file_id);
     int from_node = 0;
@@ -135,5 +139,37 @@ int DistributedManager::generate_and_broadcast_seed() {
     }
     MPI_Bcast(&seed, 1, MPI_INT, 0, MPI_COMM_WORLD);
     return seed;
+}
+
+/**
+ * @return true if currently available at remote node, false otherwise
+ */
+bool DistributedManager::get_remote_storage_class(int file_id, int* storage_class) {
+    if (file_availability.count(file_id) == 0) {
+        return false;
+    }
+    FileAvailability fa = file_availability[file_id];
+    int remote_offset = fa.offset;
+    int remote_storage_class = fa.storage_class;
+    /**
+     * We use the following heuristic to decide that a file should be available at a remote node (note that wrong decisions
+     * don't lead to an error, as the fetching logic will detect these cases, but it will hurt performance):
+     * Case 1: Storage class only exists on remote node which means that it contains only a few entries, we therefore assume the file is available.
+     * Case 2: We're ahead by at least REMOTE_PREFETCH_OFFSET_DIFF in our local prefetch string and can therefore assume that the other node is at least at remote_offset
+     * Case 3: We're done prefetching and can therefore assume the other node is as well.
+     */
+    if (pf_backends[remote_storage_class] == nullptr ||
+        pf_backends[remote_storage_class]->get_prefetch_offset() > remote_offset + REMOTE_PREFETCH_OFFSET_DIFF ||
+        pf_backends[remote_storage_class]->is_done()) {
+        *storage_class = remote_storage_class;
+        return true;
+    }
+    return false;
+}
+
+void DistributedManager::stop_all_threads(int num_threads) {
+    for (int i = 0; i < num_threads; i++) {
+        MPI_Send(nullptr, 0, MPI_CHAR, node_id, MPI_TAG_UB, MPI_COMM_WORLD);
+    }
 }
 

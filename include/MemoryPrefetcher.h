@@ -20,6 +20,8 @@ public:
     void prefetch() override;
     void fetch(int file_id, char* dst) override;
     char* get_location(int file_id, unsigned long* len) override;
+    int get_prefetch_offset() override;
+    bool is_done() override;
 
 protected:
     char* buffer;

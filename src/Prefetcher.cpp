@@ -27,6 +27,8 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidel
     init_threads();
     distr_manager->set_prefetcher_backends(pf_backends);
     distr_manager->distribute_prefetch_strings(&prefetch_string, &storage_class_ends, config_no_threads.size());
+    std::thread thread(&DistributedManager::serve, std::ref(*distr_manager));
+    distr_threads.push_back(std::move(thread));
 }
 
 void Prefetcher::init_config() {
@@ -113,6 +115,10 @@ Prefetcher::~Prefetcher() {
         for (auto &thread : thread_list) {
             thread.join();
         }
+    }
+    distr_manager->stop_all_threads(distr_threads.size());
+    for (auto &distr_thread : distr_threads) {
+        distr_thread.join();
     }
     for (int i = 0; i < used_classes - 1; i++) {
         delete pf_backends[i];

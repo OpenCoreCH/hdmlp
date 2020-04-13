@@ -43,6 +43,7 @@ private:
     std::vector<std::map<int, int>> config_bandwidths;
     std::map<int, int> config_pfs_bandwidth;
     std::vector<std::vector<std::thread>> threads;
+    std::vector<std::thread> distr_threads;
     int node_id;
     int n;
     int job_id;

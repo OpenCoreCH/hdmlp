@@ -1,6 +1,8 @@
 #ifndef HDMLP_DISTRIBUTEDMANAGER_H
 #define HDMLP_DISTRIBUTEDMANAGER_H
 
+// How many elements do we need to be ahead to decide that a file is available at a remote location, see get_remote_storage_class for details
+#define REMOTE_PREFETCH_OFFSET_DIFF 20
 
 #include "MetadataStore.h"
 #include "PrefetcherBackend.h"
@@ -17,10 +19,12 @@ public:
     int get_node_id();
     void serve();
     bool fetch(int file_id, char* dst);
+    bool get_remote_storage_class(int file_id, int* storage_class);
     void distribute_prefetch_strings(std::vector<int>* local_prefetch_string,
                                      std::vector<std::vector<int>::const_iterator>* storage_class_ends,
                                      int num_storage_classes);
     int generate_and_broadcast_seed();
+    void stop_all_threads(int num_threads);
 
 private:
     struct FileAvailability {

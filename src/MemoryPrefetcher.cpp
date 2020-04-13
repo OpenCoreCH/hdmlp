@@ -79,3 +79,13 @@ unsigned long long MemoryPrefetcher::get_file_start(int file_id) {
     }
     return start;
 }
+
+int MemoryPrefetcher::get_prefetch_offset() {
+    // Unsynchronized access, as this value is only used for approximating if file should be fetched remotely and
+    // stale values therefore aren't critical
+    return prefetch_offset;
+}
+
+bool MemoryPrefetcher::is_done() {
+    return prefetch_offset >= num_elems;
+}
