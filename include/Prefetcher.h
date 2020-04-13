@@ -47,9 +47,11 @@ private:
     int node_id;
     int n;
     int job_id;
+    int no_distributed_threads;
 
     void init_config();
     void init_threads();
+    void init_distr_threads();
 };
 
 

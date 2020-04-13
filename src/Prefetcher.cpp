@@ -28,14 +28,14 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidel
     distr_manager->distribute_prefetch_strings(&prefetch_string, &storage_class_ends, config_no_threads.size());
     init_threads();
     distr_manager->set_prefetcher_backends(pf_backends);
-    std::thread thread(&DistributedManager::serve, std::ref(*distr_manager));
-    distr_threads.push_back(std::move(thread));
+    init_distr_threads();
 }
 
 void Prefetcher::init_config() {
     Configuration config("/Volumes/GoogleDrive/Meine Ablage/Dokumente/1 - Schule/1 - ETHZ/6. Semester/Bachelor Thesis/hdmlp/cpp/hdmlp/data/hdmlp.cfg");
     config.get_storage_classes(&config_capacities, &config_no_threads, &config_bandwidths, &config_pf_backends, &config_pf_backend_options);
     config.get_pfs_bandwidth(&config_pfs_bandwidth);
+    no_distributed_threads = config.get_no_distributed_threads();
 }
 
 void Prefetcher::init_threads() {
@@ -91,6 +91,13 @@ void Prefetcher::init_threads() {
             }
         }
         threads[j] = std::move(storage_class_threads);
+    }
+}
+
+void Prefetcher::init_distr_threads() {
+    for (int i = 0; i < no_distributed_threads; i++) {
+        std::thread thread(&DistributedManager::serve, std::ref(*distr_manager));
+        distr_threads.push_back(std::move(thread));
     }
 }
 

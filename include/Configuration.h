@@ -16,6 +16,7 @@ public:
                              std::vector<std::string>* pf_backends,
                              std::vector<std::map<std::string, std::string>>* pf_backend_options);
     void get_pfs_bandwidth(std::map<int, int> *bandwidths);
+    int get_no_distributed_threads();
 
 private:
     libconfig::Config cfg;

@@ -88,3 +88,7 @@ void Configuration::get_pfs_bandwidth(std::map<int, int>* bandwidths) {
         (*bandwidths)[processes] = bandwidth;
     }
 }
+
+int Configuration::get_no_distributed_threads() {
+    return get_int_entry("distributed_threads");
+}
