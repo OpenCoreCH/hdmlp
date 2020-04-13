@@ -1,5 +1,7 @@
 #include <mpi.h>
 #include <iostream>
+#include <chrono>
+#include <thread>
 #include "../include/DistributedStore.h"
 
 DistributedStore::DistributedStore(MetadataStore* metadata_store, StorageBackend* storage_backend) { // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
@@ -87,10 +89,11 @@ void DistributedStore::distribute_prefetch_strings(std::vector<int>* local_prefe
     MPI_Type_commit(&arr_type);
     MPI_Allgather(&send_data, 1, arr_type, rcv_data, 1, arr_type, MPI_COMM_WORLD);
     parse_received_prefetch_data(rcv_data, arr_size, global_max_size);
+    /*std::this_thread::sleep_for(std::chrono::milliseconds(node_id * 1000));
     for (auto elem : file_availability) {
         std::cout << "File id " << elem.first << " available at node " << elem.second.node_id << " (offset " <<
         elem.second.offset << ") in storage class " << elem.second.storage_class << std::endl;
-    }
+    }*/
 
 }
 
@@ -100,7 +103,6 @@ void DistributedStore::parse_received_prefetch_data(int* rcv_data, int arr_size,
             int offset = i * arr_size;
             int used_storage_classes = rcv_data[offset + global_max_size];
             std::vector<int> elems_per_storage_class;
-            std::cout << "Getting num_elems of node " << i << std::endl;
             for (int j = offset + global_max_size + 1; j < offset + global_max_size + 1 + used_storage_classes; j++) {
                 elems_per_storage_class.push_back(rcv_data[j]);
             }
@@ -121,12 +123,6 @@ void DistributedStore::parse_received_prefetch_data(int* rcv_data, int arr_size,
                     }
                 }
                 offset += storage_class_elems;
-            }
-            int num_elems_prefetch_string = rcv_data[offset];
-            std::cout << "Getting prefetch string of node " << i << std::endl;
-            for (int j = offset + 1; j < offset + 1 + num_elems_prefetch_string; j++) {
-                int file_id = rcv_data[j];
-                std::cout << file_id << std::endl;
             }
         }
     }

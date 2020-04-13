@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <vector>
 
 
 FileSystemBackend::FileSystemBackend(const std::wstring& path) {
@@ -32,7 +33,7 @@ int FileSystemBackend::get_length() {
 }
 
 void FileSystemBackend::init_mappings() {
-    int id = 0;
+    std::vector<FileInformation> file_information;
     struct dirent *entry = nullptr;
     DIR *dp = nullptr;
 
@@ -50,16 +51,17 @@ void FileSystemBackend::init_mappings() {
 
             while ((subentry = readdir(subp))) {
                 if (subentry->d_type == DT_REG) {
-                    label_mappings[id] = entry->d_name;
-                    id_mappings[id] = subentry->d_name;
-                    std::string rel_path = label_mappings[id] + '/' + id_mappings[id];
+                    struct FileInformation fi{};
+                    fi.label = entry->d_name;
+                    fi.file_name = subentry->d_name;
+                    std::string rel_path = fi.label + '/' + fi.file_name;
                     std::string file_name = abs_path(&rel_path);
                     int fd = open(file_name.c_str(), O_RDONLY);
                     struct stat stbuf; // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
                     fstat(fd, &stbuf);
                     close(fd);
-                    size_mappings[id] = stbuf.st_size;
-                    id += 1;
+                    fi.file_size = stbuf.st_size;
+                    file_information.push_back(fi);
                 }
             }
 
@@ -69,6 +71,17 @@ void FileSystemBackend::init_mappings() {
         }
     }
     closedir(dp);
+    // Ensure that all nodes have same file ids by sorting them
+    sort(file_information.begin(), file_information.end(), [=](FileInformation& a, FileInformation& b) {
+             return a.label + a.file_name > b.label + b.file_name;
+         }
+    );
+    for (int i = 0; i < file_information.size(); i++) {
+        FileInformation fi = file_information[i];
+        id_mappings[i] = fi.file_name;
+        label_mappings[i] = fi.label;
+        size_mappings[i] = fi.file_size;
+    }
 }
 
 std::string FileSystemBackend::abs_path(const std::string* rel_path) {

@@ -127,7 +127,7 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
             }
             batch_advancement_cond_var.notify_all();
         } else {
-            std::cout << thread_id << ": Waiting for batch advancement " << std::endl;
+            //std::cout << thread_id << ": Waiting for batch advancement " << std::endl;
             batch_advancement_cond_var.wait(crit_section_lock);
         }
 

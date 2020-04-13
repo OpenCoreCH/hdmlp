@@ -14,6 +14,11 @@ public:
     void fetch(int file_id, char *dst) override;
 
 private:
+    struct FileInformation {
+        std::string label;
+        std::string file_name;
+        int file_size;
+    };
     std::string path;
     std::unordered_map<int, std::string> label_mappings;
     std::unordered_map<int, int> size_mappings;
