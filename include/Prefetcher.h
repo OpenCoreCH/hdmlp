@@ -9,7 +9,7 @@
 #include "StagingBufferPrefetcher.h"
 #include "PrefetcherBackend.h"
 #include "MetadataStore.h"
-#include "DistributedStore.h"
+#include "DistributedManager.h"
 
 class Prefetcher {
 public:
@@ -33,7 +33,7 @@ private:
     StagingBufferPrefetcher* sbf;
     PrefetcherBackend** pf_backends;
     MetadataStore* metadata_store;
-    DistributedStore* distr_store;
+    DistributedManager* distr_manager;
     std::vector<int> prefetch_string;
     std::vector<std::vector<int>::const_iterator> storage_class_ends;
     std::vector<unsigned long long int> config_capacities;

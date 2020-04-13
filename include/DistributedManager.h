@@ -1,5 +1,5 @@
-#ifndef HDMLP_DISTRIBUTEDSTORE_H
-#define HDMLP_DISTRIBUTEDSTORE_H
+#ifndef HDMLP_DISTRIBUTEDMANAGER_H
+#define HDMLP_DISTRIBUTEDMANAGER_H
 
 
 #include "MetadataStore.h"
@@ -7,10 +7,10 @@
 #include "StorageBackend.h"
 #include <vector>
 
-class DistributedStore {
+class DistributedManager {
 public:
-    DistributedStore(MetadataStore* metadata_store, StorageBackend* storage_backend);
-    ~DistributedStore();
+    DistributedManager(MetadataStore* metadata_store, StorageBackend* storage_backend);
+    ~DistributedManager();
 
     void set_prefetcher_backends(PrefetcherBackend** prefetcher_backends);
     int get_no_nodes();
@@ -20,6 +20,7 @@ public:
     void distribute_prefetch_strings(std::vector<int>* local_prefetch_string,
                                      std::vector<std::vector<int>::const_iterator>* storage_class_ends,
                                      int num_storage_classes);
+    int generate_and_broadcast_seed();
 
 private:
     struct FileAvailability {
@@ -38,4 +39,4 @@ private:
 };
 
 
-#endif //HDMLP_DISTRIBUTEDSTORE_H
+#endif //HDMLP_DISTRIBUTEDMANAGER_H

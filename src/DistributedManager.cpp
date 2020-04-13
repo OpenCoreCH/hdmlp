@@ -2,9 +2,9 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
-#include "../include/DistributedStore.h"
+#include "../include/DistributedManager.h"
 
-DistributedStore::DistributedStore(MetadataStore* metadata_store, StorageBackend* storage_backend) { // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
+DistributedManager::DistributedManager(MetadataStore* metadata_store, StorageBackend* storage_backend) { // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
     this->metadata_store = metadata_store;
     this->storage_backend = storage_backend;
     int provided;
@@ -16,25 +16,25 @@ DistributedStore::DistributedStore(MetadataStore* metadata_store, StorageBackend
     MPI_Comm_rank(MPI_COMM_WORLD, &node_id);
 }
 
-DistributedStore::~DistributedStore() {
+DistributedManager::~DistributedManager() {
     MPI_Finalize();
 }
 
-void DistributedStore::set_prefetcher_backends(PrefetcherBackend** prefetcher_backends) {
+void DistributedManager::set_prefetcher_backends(PrefetcherBackend** prefetcher_backends) {
     pf_backends = prefetcher_backends;
 }
 
-int DistributedStore::get_no_nodes() {
+int DistributedManager::get_no_nodes() {
     return n;
 }
 
-int DistributedStore::get_node_id() {
+int DistributedManager::get_node_id() {
     return node_id;
 }
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
-void DistributedStore::serve() {
+void DistributedManager::serve() {
     while (true) {
         int req_file_id;
         MPI_Status status;
@@ -53,7 +53,7 @@ void DistributedStore::serve() {
 }
 #pragma clang diagnostic pop
 
-bool DistributedStore::fetch(int file_id, char* dst) {
+bool DistributedManager::fetch(int file_id, char* dst) {
     unsigned long file_size = storage_backend->get_file_size(file_id);
     int from_node = 0;
     MPI_Send(&file_id, 1, MPI_INT, from_node, MPI_TAG_UB, MPI_COMM_WORLD);
@@ -64,9 +64,9 @@ bool DistributedStore::fetch(int file_id, char* dst) {
     return response_length > 0;
 }
 
-void DistributedStore::distribute_prefetch_strings(std::vector<int>* local_prefetch_string,
-                                                   std::vector<std::vector<int>::const_iterator>* storage_class_ends,
-                                                   int num_storage_classes) {
+void DistributedManager::distribute_prefetch_strings(std::vector<int>* local_prefetch_string,
+                                                     std::vector<std::vector<int>::const_iterator>* storage_class_ends,
+                                                     int num_storage_classes) {
     int local_size = local_prefetch_string->size();
     int global_max_size;
     MPI_Allreduce(&local_size, &global_max_size, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
@@ -89,15 +89,15 @@ void DistributedStore::distribute_prefetch_strings(std::vector<int>* local_prefe
     MPI_Type_commit(&arr_type);
     MPI_Allgather(&send_data, 1, arr_type, rcv_data, 1, arr_type, MPI_COMM_WORLD);
     parse_received_prefetch_data(rcv_data, arr_size, global_max_size);
-    /*std::this_thread::sleep_for(std::chrono::milliseconds(node_id * 1000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(node_id * 1000));
     for (auto elem : file_availability) {
         std::cout << "File id " << elem.first << " available at node " << elem.second.node_id << " (offset " <<
         elem.second.offset << ") in storage class " << elem.second.storage_class << std::endl;
-    }*/
+    }
 
 }
 
-void DistributedStore::parse_received_prefetch_data(int* rcv_data, int arr_size, int global_max_size) {
+void DistributedManager::parse_received_prefetch_data(int* rcv_data, int arr_size, int global_max_size) {
     for (int i = 0; i < n; i++) {
         if (i != node_id) {
             int offset = i * arr_size;
@@ -126,5 +126,14 @@ void DistributedStore::parse_received_prefetch_data(int* rcv_data, int arr_size,
             }
         }
     }
+}
+
+int DistributedManager::generate_and_broadcast_seed() {
+    int seed;
+    if (node_id == 0) {
+        seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+    }
+    MPI_Bcast(&seed, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    return seed;
 }
 

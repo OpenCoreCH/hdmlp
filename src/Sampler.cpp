@@ -13,9 +13,6 @@ Sampler::Sampler(StorageBackend* backend, // NOLINT(cert-msc32-c,cert-msc51-cpp)
     for (int i = 0; i < count; i++) {
         access_sequence[i] = i;
     }
-    if (seed == 0) {
-        seed = std::chrono::system_clock::now().time_since_epoch().count();
-    }
     this->backend = backend;
     this->n = n;
     this->batch_size = batch_size;

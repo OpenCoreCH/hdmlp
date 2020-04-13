@@ -15,15 +15,18 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidel
                        int job_id) {
     backend = new FileSystemBackend(dataset_path);
     metadata_store = new MetadataStore;
-    distr_store = new DistributedStore(metadata_store, backend);
-    n = distr_store->get_no_nodes();
-    node_id = distr_store->get_node_id();
+    distr_manager = new DistributedManager(metadata_store, backend);
+    n = distr_manager->get_no_nodes();
+    node_id = distr_manager->get_node_id();
     this->job_id = job_id;
+    if (seed == 0) {
+        seed = distr_manager->generate_and_broadcast_seed();
+    }
     sampler = new Sampler(backend, n, batch_size, epochs, distr_scheme, drop_last_batch, seed);
     init_config();
     init_threads();
-    distr_store->set_prefetcher_backends(pf_backends);
-    distr_store->distribute_prefetch_strings(&prefetch_string, &storage_class_ends, config_no_threads.size());
+    distr_manager->set_prefetcher_backends(pf_backends);
+    distr_manager->distribute_prefetch_strings(&prefetch_string, &storage_class_ends, config_no_threads.size());
 }
 
 void Prefetcher::init_config() {
@@ -118,7 +121,7 @@ Prefetcher::~Prefetcher() {
     delete backend;
     delete sampler;
     delete metadata_store;
-    delete distr_store;
+    delete distr_manager;
     delete sbf;
     delete[] staging_buffer;
 }
