@@ -9,6 +9,7 @@
 #include "StagingBufferPrefetcher.h"
 #include "PrefetcherBackend.h"
 #include "MetadataStore.h"
+#include "DistributedStore.h"
 
 class Prefetcher {
 public:
@@ -32,6 +33,7 @@ private:
     StagingBufferPrefetcher* sbf;
     PrefetcherBackend** pf_backends;
     MetadataStore* metadata_store;
+    DistributedStore* distr_store;
     std::vector<int> prefetch_string;
     std::vector<unsigned long long int> config_capacities;
     std::vector<int> config_no_threads;
@@ -40,7 +42,8 @@ private:
     std::vector<std::map<int, int>> config_bandwidths;
     std::map<int, int> config_pfs_bandwidth;
     std::vector<std::vector<std::thread>> threads;
-    int node_id = 0;
+    int node_id;
+    int n;
     int job_id;
 
     void init_config();

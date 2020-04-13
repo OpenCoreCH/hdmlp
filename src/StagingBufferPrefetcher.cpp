@@ -144,10 +144,10 @@ void StagingBufferPrefetcher::fetch(int file_id, char *dst) {
     //return;
     int storage_level = metadata_store->get_storage_level(file_id);
     if (storage_level == 0) {
-        std::cout << "Fetching from PFS, file id: " << file_id << std::endl;
+        //std::cout << "Fetching from PFS, file id: " << file_id << std::endl;
         backend->fetch(file_id, dst);
     } else {
-        std::cout << "Fetching from local storage level " << storage_level << std::endl;
+        //std::cout << "Fetching from local storage level " << storage_level << std::endl;
         pf_backends[storage_level - 1]->fetch(file_id, dst);
     }
 }

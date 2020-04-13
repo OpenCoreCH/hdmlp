@@ -13,13 +13,18 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidel
                        bool drop_last_batch,
                        int seed,
                        int job_id) {
-    int n = 1;
-    this->job_id = job_id;
     backend = new FileSystemBackend(dataset_path);
-    sampler = new Sampler(backend, n, batch_size, epochs, distr_scheme, drop_last_batch, seed);
     metadata_store = new MetadataStore;
+    distr_store = new DistributedStore(metadata_store);
+    n = distr_store->get_no_nodes();
+    std::cout << "Number of nodes = " << n << std::endl;
+    node_id = distr_store->get_node_id();
+    std::cout << "Node id = " << node_id << std::endl;
+    this->job_id = job_id;
+    sampler = new Sampler(backend, n, batch_size, epochs, distr_scheme, drop_last_batch, seed);
     init_config();
     init_threads();
+    distr_store->set_prefetcher_backends(pf_backends);
 }
 
 void Prefetcher::init_config() {
@@ -115,6 +120,7 @@ Prefetcher::~Prefetcher() {
     delete backend;
     delete sampler;
     delete metadata_store;
+    delete distr_store;
     delete sbf;
     delete[] staging_buffer;
 }
