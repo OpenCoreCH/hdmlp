@@ -11,10 +11,11 @@
 #include "PrefetcherBackend.h"
 #include "StorageBackend.h"
 #include <vector>
+#include <mpi.h>
 
 class DistributedManager {
 public:
-    DistributedManager(MetadataStore* metadata_store, StorageBackend* storage_backend);
+    DistributedManager(MetadataStore* metadata_store, StorageBackend* storage_backend, int job_id);
     ~DistributedManager();
 
     void set_prefetcher_backends(PrefetcherBackend** prefetcher_backends);
@@ -35,11 +36,13 @@ private:
         int storage_class;
         int offset;
     };
+    MPI_Comm JOB_COMM;
     PrefetcherBackend** pf_backends = nullptr;
     MetadataStore* metadata_store;
     StorageBackend* storage_backend;
     int n;
     int node_id;
+    bool has_initialized_mpi = false;
     std::unordered_map<int, FileAvailability> file_availability; // Stores mapping of file_id -> availability info
 
     void parse_received_prefetch_data(int* rcv_data, int arr_size, int global_max_size);

@@ -18,7 +18,7 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidel
     init_config(config_path);
     backend = new FileSystemBackend(dataset_path);
     metadata_store = new MetadataStore;
-    distr_manager = new DistributedManager(metadata_store, backend);
+    distr_manager = new DistributedManager(metadata_store, backend, job_id);
     n = distr_manager->get_no_nodes();
     node_id = distr_manager->get_node_id();
     this->job_id = job_id;

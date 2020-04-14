@@ -1,23 +1,33 @@
-#include <mpi.h>
 #include <iostream>
 #include <chrono>
 #include <thread>
 #include "../include/DistributedManager.h"
 
-DistributedManager::DistributedManager(MetadataStore* metadata_store, StorageBackend* storage_backend) { // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
+DistributedManager::DistributedManager(MetadataStore* metadata_store, StorageBackend* storage_backend, int job_id) { // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
     this->metadata_store = metadata_store;
     this->storage_backend = storage_backend;
-    int provided;
-    MPI_Init_thread(nullptr, nullptr, MPI_THREAD_MULTIPLE, &provided);
-    if (provided < MPI_THREAD_MULTIPLE) {
-        throw std::runtime_error("Implementation doesn't support MPI_THREAD_MULTIPLE");
+    int initialized; // If multiple jobs run in parallel, initialize only once
+    MPI_Initialized(&initialized);
+    if (!initialized) {
+        int provided;
+        MPI_Init_thread(nullptr, nullptr, MPI_THREAD_MULTIPLE, &provided);
+        if (provided < MPI_THREAD_MULTIPLE) {
+            throw std::runtime_error("Implementation doesn't support MPI_THREAD_MULTIPLE");
+        }
+        has_initialized_mpi = true;
     }
-    MPI_Comm_size(MPI_COMM_WORLD, &n);
-    MPI_Comm_rank(MPI_COMM_WORLD, &node_id);
+    int world_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    MPI_Comm_split(MPI_COMM_WORLD, job_id, world_rank, &JOB_COMM);
+    MPI_Comm_size(JOB_COMM, &n);
+    MPI_Comm_rank(JOB_COMM, &node_id);
 }
 
 DistributedManager::~DistributedManager() {
-    MPI_Finalize();
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (has_initialized_mpi) {
+        MPI_Finalize();
+    }
 }
 
 void DistributedManager::set_prefetcher_backends(PrefetcherBackend** prefetcher_backends) {
@@ -37,7 +47,7 @@ void DistributedManager::serve() {
     while (true) {
         int req[2];
         MPI_Status status;
-        MPI_Recv(&req,2, MPI_INT, MPI_ANY_SOURCE, REQUEST_TAG, MPI_COMM_WORLD, &status);
+        MPI_Recv(&req,2, MPI_INT, MPI_ANY_SOURCE, REQUEST_TAG, JOB_COMM, &status);
         int source = status.MPI_SOURCE;
         if (source == node_id) {
             break;
@@ -48,10 +58,10 @@ void DistributedManager::serve() {
         if (storage_level > 0) {
             unsigned long len = storage_backend->get_file_size(req_file_id);
             char* loc = pf_backends[storage_level - 1]->get_location(req_file_id, &len);
-            MPI_Send(loc, (int) len, MPI_CHAR, source, answer_tag, MPI_COMM_WORLD);
+            MPI_Send(loc, (int) len, MPI_CHAR, source, answer_tag, JOB_COMM);
         } else {
             // Send zero bytes to indicate that file isn't available
-            MPI_Send(nullptr, 0, MPI_CHAR, source, answer_tag, MPI_COMM_WORLD);
+            MPI_Send(nullptr, 0, MPI_CHAR, source, answer_tag, JOB_COMM);
         }
     }
 }
@@ -69,9 +79,9 @@ bool DistributedManager::fetch(int file_id, char* dst, int thread_id) {
     }
     // Send requested file id and answer tag
     int req[2] = {file_id, thread_id + 1};
-    MPI_Send(&req, 2, MPI_INT, from_node, REQUEST_TAG, MPI_COMM_WORLD);
+    MPI_Send(&req, 2, MPI_INT, from_node, REQUEST_TAG, JOB_COMM);
     MPI_Status response_status;
-    MPI_Recv(dst, (int) file_size, MPI_CHAR, from_node, thread_id + 1, MPI_COMM_WORLD, &response_status);
+    MPI_Recv(dst, (int) file_size, MPI_CHAR, from_node, thread_id + 1, JOB_COMM, &response_status);
     int response_length;
     MPI_Get_count(&response_status, MPI_CHAR, &response_length);
     return response_length > 0;
@@ -82,7 +92,7 @@ void DistributedManager::distribute_prefetch_strings(std::vector<int>* local_pre
                                                      int num_storage_classes) {
     int local_size = local_prefetch_string->size();
     int global_max_size;
-    MPI_Allreduce(&local_size, &global_max_size, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&local_size, &global_max_size, 1, MPI_INT, MPI_MAX, JOB_COMM);
     // We send at most (num_storage_classes - 1) length values, total size (including used number of storage classes) therefore
     int arr_size = global_max_size + num_storage_classes;
     int send_data[arr_size];
@@ -100,7 +110,8 @@ void DistributedManager::distribute_prefetch_strings(std::vector<int>* local_pre
     MPI_Datatype arr_type;
     MPI_Type_contiguous(arr_size, MPI_INT, &arr_type);
     MPI_Type_commit(&arr_type);
-    MPI_Allgather(&send_data, 1, arr_type, rcv_data, 1, arr_type, MPI_COMM_WORLD);
+    MPI_Allgather(&send_data, 1, arr_type, rcv_data, 1, arr_type, JOB_COMM);
+    MPI_Type_free(&arr_type);
     parse_received_prefetch_data(rcv_data, arr_size, global_max_size);
     std::cout << "FILE AVAIL SIZE " << file_availability.size() << std::endl;
     /*std::this_thread::sleep_for(std::chrono::milliseconds(node_id * 1000));
@@ -147,7 +158,7 @@ int DistributedManager::generate_and_broadcast_seed() {
     if (node_id == 0) {
         seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
     }
-    MPI_Bcast(&seed, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&seed, 1, MPI_INT, 0, JOB_COMM);
     return seed;
 }
 
@@ -178,9 +189,10 @@ bool DistributedManager::get_remote_storage_class(int file_id, int* storage_clas
 }
 
 void DistributedManager::stop_all_threads(int num_threads) {
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(JOB_COMM);
     for (int i = 0; i < num_threads; i++) {
-        MPI_Send(nullptr, 0, MPI_INT, node_id, REQUEST_TAG, MPI_COMM_WORLD);
+        MPI_Send(nullptr, 0, MPI_INT, node_id, REQUEST_TAG, JOB_COMM);
     }
+    MPI_Comm_free(&JOB_COMM);
 }
 
