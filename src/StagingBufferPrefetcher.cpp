@@ -57,7 +57,7 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
             while (staging_buffer_pointer < read_offset && staging_buffer_pointer + entry_size >= read_offset) {
                 // Prevent overwriting of non-read data
                 waiting_for_consumption = true;
-                std::cout << thread_id << ": Waiting for Read offset (1) " << std::endl;
+                //std::cout << thread_id << ": Waiting for Read offset (1) " << std::endl;
                 read_offset_cond_var.wait(crit_section_lock);
             }
 

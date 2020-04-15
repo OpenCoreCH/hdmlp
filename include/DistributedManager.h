@@ -15,7 +15,7 @@
 
 class DistributedManager {
 public:
-    DistributedManager(MetadataStore* metadata_store, StorageBackend* storage_backend, int job_id);
+    DistributedManager(MetadataStore* metadata_store, StorageBackend* storage_backend);
     ~DistributedManager();
 
     void set_prefetcher_backends(PrefetcherBackend** prefetcher_backends);
