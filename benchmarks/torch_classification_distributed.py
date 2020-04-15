@@ -1,7 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torchvision
+import torch.distributed as dist
+import torch.utils.data
+import horovod.torch as hvd
 from torchvision import datasets, models, transforms
 import time
 import os
@@ -9,6 +11,32 @@ import copy
 import hdmlp
 from lib.torch.hdmlpfolder import HDMLPImageFolder
 from lib.torch.hdmlpdataloader import HDMLPDataLoader
+
+"""
+Distributed TensorFlow Classification benchmark, based on:
+ - https://pytorch.org/tutorials/beginner/finetuning_torchvision_models_tutorial.html
+ - https://github.com/horovod/horovod/blob/master/docs/pytorch.rst
+"""
+# --- Benchmark parameters ---
+# Top level data directory. Here we assume the format of the directory conforms to the ImageFolder structure
+data_dir = "/Volumes/Daten/Daten/Datasets/hymenoptera_data"
+# HDMLP parameters
+lib_path = "/Volumes/GoogleDrive/Meine Ablage/Dokumente/1 - Schule/1 - ETHZ/6. Semester/Bachelor Thesis/hdmlp/cpp/hdmlp/cmake-build-debug/libhdmlp.dylib"
+config_path = "/Volumes/GoogleDrive/Meine Ablage/Dokumente/1 - Schule/1 - ETHZ/6. Semester/Bachelor Thesis/hdmlp/cpp/hdmlp/data/hdmlp.cfg"
+drop_last_batch = False
+seed = None
+# Models to choose from [resnet, alexnet, vgg, squeezenet, densenet, inception]
+model_name = "squeezenet"
+# Number of classes in the dataset
+num_classes = 2
+# Batch size for training (change depending on how much memory you have)
+batch_size = 64
+# Number of epochs to train for
+num_epochs = 4
+# Flag for feature extracting. When False, we finetune the whole model, when True we only update the reshaped layer params
+feature_extract = False
+# Which file loading framework to use
+backend = "hdmlp"
 
 
 def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_inception=False):
@@ -28,7 +56,7 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
             if phase == 'train':
                 model.train()  # Set model to training mode
             else:
-                model.eval()   # Set model to evaluate mode
+                model.eval()  # Set model to evaluate mode
 
             running_loss = 0.0
             running_corrects = 0
@@ -53,7 +81,7 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
                         outputs, aux_outputs = model(inputs)
                         loss1 = criterion(outputs, labels)
                         loss2 = criterion(aux_outputs, labels)
-                        loss = loss1 + 0.4*loss2
+                        loss = loss1 + 0.4 * loss2
                     else:
                         outputs = model(inputs)
                         loss = criterion(outputs, labels)
@@ -91,15 +119,12 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
     model.load_state_dict(best_model_wts)
     return model, val_acc_history
 
+
 def set_parameter_requires_grad(model, feature_extracting):
     if feature_extracting:
         for param in model.parameters():
             param.requires_grad = False
 
-    # Initialize these variables which will be set in this if statement. Each of these
-    #   variables is model specific.
-    model_ft = None
-    input_size = 0
 
 def initialize_model(model_name, num_classes, feature_extract, use_pretrained=True):
     # Initialize these variables which will be set in this if statement. Each of these
@@ -172,93 +197,79 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Tr
 
     return model_ft, input_size
 
-# Top level data directory. Here we assume the format of the directory conforms
-#   to the ImageFolder structure
-data_dir = "/Volumes/Daten/Daten/Datasets/hymenoptera_data"
+def average_gradients(model):
+    size = float(dist.get_world_size())
+    for param in model.parameters():
+        dist.all_reduce(param.grad.data, op=dist.reduce_op.SUM)
+        param.grad.data /= size
 
-# HDMLP parameters
-lib_path = "/Volumes/GoogleDrive/Meine Ablage/Dokumente/1 - Schule/1 - ETHZ/6. Semester/Bachelor Thesis/hdmlp/cpp/hdmlp/cmake-build-debug/libhdmlp.dylib"
-config_path = "/Volumes/GoogleDrive/Meine Ablage/Dokumente/1 - Schule/1 - ETHZ/6. Semester/Bachelor Thesis/hdmlp/cpp/hdmlp/data/hdmlp.cfg"
+if __name__ == "__main__":
+    # Initialize the model for this run
+    model_ft, input_size = initialize_model(model_name, num_classes, feature_extract, use_pretrained=False)
+    print(model_ft)
+    # Data augmentation and normalization for training
+    # Just normalization for validation
+    data_transforms = {
+        'train': transforms.Compose([
+            transforms.RandomResizedCrop(input_size),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ]),
+        'val': transforms.Compose([
+            transforms.Resize(input_size),
+            transforms.CenterCrop(input_size),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ]),
+    }
 
-# Models to choose from [resnet, alexnet, vgg, squeezenet, densenet, inception]
-model_name = "squeezenet"
+    print("Initializing Datasets and Dataloaders...")
+    image_datasets = {}
+    dataloaders_dict = {}
 
-# Number of classes in the dataset
-num_classes = 2
+    # Create training and validation datasets
 
-# Batch size for training (change depending on how much memory you have)
-batch_size = 8
+    if backend == "hdmlp":
+        hdmlp_jobs = {x: hdmlp.Job(os.path.join(data_dir, x), batch_size, num_epochs, 'uniform', drop_last_batch, seed, config_path, lib_path) for x in ['train', 'val']}
+        image_datasets = {x: HDMLPImageFolder(os.path.join(data_dir, x), hdmlp_jobs[x], data_transforms[x]) for x in ['train', 'val']}
+        dataloaders_dict = {x: HDMLPDataLoader(image_datasets[x], batch_size, True, hdmlp_jobs[x].no_nodes(), hdmlp_jobs[x].node_id()) for x in ['train', 'val']}
+        hvd.init()
+    elif backend == "torchvision":
+        hvd.init()
+        image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms[x]) for x in ['train', 'val']}
+        image_samplers = {x: torch.utils.data.distributed.DistributedSampler(image_datasets[x], num_replicas=hvd.size(), rank=hvd.rank()) for x in ['train', 'val']}
+        dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size, num_workers=4, sampler=image_samplers[x]) for x in ['train', 'val']}
 
-# Number of epochs to train for
-num_epochs = 1
+    num_nodes = hvd.size()
 
-# Flag for feature extracting. When False, we finetune the whole model,
-#   when True we only update the reshaped layer params
-feature_extract = True
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    model_ft = model_ft.to(device)
 
-# Initialize the model for this run
-model_ft, input_size = initialize_model(model_name, num_classes, feature_extract, use_pretrained=False)
+    # Gather the parameters to be optimized/updated in this run. If we are
+    #  finetuning we will be updating all parameters. However, if we are
+    #  doing feature extract method, we will only update the parameters
+    #  that we have just initialized, i.e. the parameters with requires_grad
+    #  is True.
+    params_to_update = model_ft.parameters()
+    print("Params to learn:")
+    if feature_extract:
+        params_to_update = []
+        for name, param in model_ft.named_parameters():
+            if param.requires_grad == True:
+                params_to_update.append(param)
+                print("\t", name)
+    else:
+        for name, param in model_ft.named_parameters():
+            if param.requires_grad == True:
+                print("\t", name)
 
-# Print the model we just instantiated
-print(model_ft)
-
-# Data augmentation and normalization for training
-# Just normalization for validation
-data_transforms = {
-    'train': transforms.Compose([
-        transforms.RandomResizedCrop(input_size),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-    ]),
-    'val': transforms.Compose([
-        transforms.Resize(input_size),
-        transforms.CenterCrop(input_size),
-        transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-    ]),
-}
-
-print("Initializing Datasets and Dataloaders...")
-
-# Create training and validation datasets
-#image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms[x]) for x in ['train', 'val']}
-image_datasets = {x: HDMLPImageFolder(os.path.join(data_dir, x), hdmlp.Job(os.path.join(data_dir, x), batch_size, num_epochs, 'uniform', True, None, config_path, lib_path),
-                                      data_transforms[x])
-                  for x in ['train', 'val']}
-# Create training and validation dataloaders
-dataloaders_dict = {x: HDMLPDataLoader(image_datasets[x], batch_size, True) for x in ['train', 'val']}
-#dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size, shuffle=True, num_workers=4) for x in ['train', 'val']}
-
-# Detect if we have a GPU available
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-# Send the model to GPU
-model_ft = model_ft.to(device)
-
-# Gather the parameters to be optimized/updated in this run. If we are
-#  finetuning we will be updating all parameters. However, if we are
-#  doing feature extract method, we will only update the parameters
-#  that we have just initialized, i.e. the parameters with requires_grad
-#  is True.
-params_to_update = model_ft.parameters()
-print("Params to learn:")
-if feature_extract:
-    params_to_update = []
-    for name,param in model_ft.named_parameters():
-        if param.requires_grad == True:
-            params_to_update.append(param)
-            print("\t",name)
-else:
-    for name,param in model_ft.named_parameters():
-        if param.requires_grad == True:
-            print("\t",name)
-
-# Observe that all parameters are being optimized
-optimizer_ft = optim.SGD(params_to_update, lr=0.001, momentum=0.9)
-
-# Setup the loss fxn
-criterion = nn.CrossEntropyLoss()
-
-# Train and evaluate
-model_ft, hist = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs=num_epochs, is_inception=(model_name=="inception"))
+    # Observe that all parameters are being optimized
+    optimizer_ft = optim.SGD(params_to_update, lr=num_nodes * 0.001, momentum=0.9)
+    optimizer_ft = hvd.DistributedOptimizer(optimizer_ft, named_parameters=model_ft.named_parameters())
+    hvd.broadcast_parameters(model_ft.state_dict(), root_rank=0)
+    # Setup the loss fxn
+    criterion = nn.CrossEntropyLoss()
+    # Train and evaluate
+    model_ft, hist = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs=num_epochs,
+                                 is_inception=(model_name == "inception"))

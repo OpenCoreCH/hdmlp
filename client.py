@@ -20,7 +20,7 @@ job = hdmlp.Job(path,
 job.setup()
 #print("Setup complete")
 
-for i in range(batch_size * epochs // 2):
+for i in range(batch_size * epochs):
     label, sample = job.get()
     #time.sleep(1)
     #print(label)
