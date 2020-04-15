@@ -10,9 +10,9 @@
 FileSystemPrefetcher::FileSystemPrefetcher(std::map<std::string, std::string> &backend_options,
                                            std::vector<int>::const_iterator prefetch_start,
                                            std::vector<int>::const_iterator prefetch_end,
-                                           unsigned long long int capacity,
-                                           StorageBackend* backend, MetadataStore* metadata_store, int storage_level,
-                                           int job_id) :
+                                           unsigned long long int capacity, StorageBackend* backend,
+                                           MetadataStore* metadata_store, int storage_level, int job_id,
+                                           int node_id) :
                                            MemoryPrefetcher(backend_options, prefetch_start, prefetch_end, capacity, backend, metadata_store, storage_level, false) {
     path = backend_options["path"];
     if (path.back() != '/') {
@@ -23,7 +23,8 @@ FileSystemPrefetcher::FileSystemPrefetcher(std::map<std::string, std::string> &b
         throw std::runtime_error("Configured file system prefetching path doesn't exist or isn't a directory");
     }
 
-    path += std::to_string(job_id);
+    path = path + std::to_string(job_id) + "_" + std::to_string(node_id);
+    std::cout << "PATH = " << path << std::endl;
 
     if ((fd = open(path.c_str(), O_RDWR | O_CREAT | O_TRUNC, (mode_t)0600)) < 0) { // NOLINT(hicpp-signed-bitwise)
         throw std::runtime_error("Error opening file for prefetching");

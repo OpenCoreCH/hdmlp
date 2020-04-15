@@ -18,10 +18,8 @@ public:
            std::vector<int>::const_iterator start,
            std::vector<int>::const_iterator end,
            StorageBackend* storage_backend,
-           MetadataStore* metadata_store,
-           int storage_level,
-           int no_threads,
-           int job_id);
+           MetadataStore* metadata_store, int storage_level, int job_id,
+           int node_id);
 };
 
 

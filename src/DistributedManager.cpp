@@ -50,6 +50,7 @@ void DistributedManager::serve() {
         int req[2];
         MPI_Status status;
         MPI_Recv(&req,2, MPI_INT, MPI_ANY_SOURCE, REQUEST_TAG, JOB_COMM, &status);
+        std::cout << "Got message" << std::endl;
         int source = status.MPI_SOURCE;
         if (source == node_id) {
             break;

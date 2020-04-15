@@ -87,8 +87,8 @@ void Prefetcher::init_threads() {
                                                                              backend,
                                                                              metadata_store,
                                                                              j,
-                                                                             no_storage_class_threads,
-                                                                             job_id);
+                                                                             job_id,
+                                                                             node_id);
                     pf_backends[j - 1] = pf;
                 }
                 std::thread thread(&PrefetcherBackend::prefetch, std::ref(*pf_backends[j - 1]));
