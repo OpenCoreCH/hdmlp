@@ -6,15 +6,17 @@
 DistributedManager::DistributedManager(MetadataStore* metadata_store, StorageBackend* storage_backend, int job_id) { // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
     this->metadata_store = metadata_store;
     this->storage_backend = storage_backend;
-    int initialized; // If multiple jobs run in parallel, initialize only once
+    int initialized; // If multiple jobs run in parallel or MPI was already initialized by e.g. Horovod, initialize only once
     MPI_Initialized(&initialized);
+    int provided;
     if (!initialized) {
-        int provided;
         MPI_Init_thread(nullptr, nullptr, MPI_THREAD_MULTIPLE, &provided);
-        if (provided < MPI_THREAD_MULTIPLE) {
-            throw std::runtime_error("Implementation doesn't support MPI_THREAD_MULTIPLE");
-        }
         has_initialized_mpi = true;
+    } else {
+        MPI_Query_thread(&provided);
+    }
+    if (provided < MPI_THREAD_MULTIPLE) {
+        throw std::runtime_error("Implementation initialized without MPI_THREAD_MULTIPLE");
     }
     int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
