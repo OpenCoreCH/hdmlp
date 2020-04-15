@@ -145,3 +145,11 @@ Prefetcher::~Prefetcher() {
     delete[] staging_buffer;
 }
 
+int Prefetcher::get_node_id() {
+    return node_id;
+}
+
+int Prefetcher::get_no_nodes() {
+    return n;
+}
+

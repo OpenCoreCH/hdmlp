@@ -26,6 +26,8 @@ public:
     unsigned long long int get_next_file_end();
     void notify_data_consumed(unsigned long long int until_offset);
     int get_dataset_length();
+    int get_node_id();
+    int get_no_nodes();
 
 private:
     char* staging_buffer;

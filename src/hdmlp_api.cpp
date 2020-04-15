@@ -38,6 +38,14 @@ char* get_staging_buffer(int job_id) {
     return staging_buffer;
 }
 
+int get_node_id(int job_id) {
+    return pf[job_id]->get_node_id();
+}
+
+int get_no_nodes(int job_id) {
+    return pf[job_id]->get_no_nodes();
+}
+
 int length(int job_id) {
     return pf[job_id]->get_dataset_length();
 }

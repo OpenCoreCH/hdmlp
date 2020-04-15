@@ -16,6 +16,10 @@ extern "C" {
 
     char* get_staging_buffer(int job_id);
 
+    int get_node_id(int job_id);
+
+    int get_no_nodes(int job_id);
+
     int length(int job_id);
 
     unsigned long long int get_next_file_end(int job_id);
