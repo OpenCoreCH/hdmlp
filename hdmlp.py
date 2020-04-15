@@ -85,3 +85,9 @@ class Job:
 
     def length(self):
         return self.hdmlp_lib.length(self.job_id)
+
+    def node_id(self):
+        return self.hdmlp_lib.get_node_id(self.job_id)
+
+    def no_nodes(self):
+        return self.hdmlp_lib.get_no_nodes(self.job_id)
