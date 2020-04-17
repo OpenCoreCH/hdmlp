@@ -30,6 +30,9 @@ class HDMLPDataLoader(object):
             else:
                 # Replicate Sampler.cpp, i.e. nodes iterate still node_local_batch_size in the last batch, unless their offset is higher than the file size
                 iter_batch_size = min(max((self.dataset_size - self.batch_offset) - self.node_local_batch_size * self.node_id, 0), self.node_local_batch_size)
+                if iter_batch_size == 0:
+                    self.batch_offset = 0
+                    raise StopIteration
 
         labels = []
         samples = []

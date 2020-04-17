@@ -32,7 +32,7 @@ num_classes = 2
 # Batch size for training (change depending on how much memory you have)
 batch_size = 64
 # Number of epochs to train for
-num_epochs = 1
+num_epochs = 2
 # Flag for feature extracting. When False, we finetune the whole model, when True we only update the reshaped layer params
 feature_extract = False
 # Which file loading framework to use
@@ -273,3 +273,4 @@ if __name__ == "__main__":
     # Train and evaluate
     model_ft, hist = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs=num_epochs,
                                  is_inception=(model_name == "inception"))
+    #hvd.shutdown()
