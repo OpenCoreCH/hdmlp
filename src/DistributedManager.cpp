@@ -190,7 +190,6 @@ bool DistributedManager::get_remote_storage_class(int file_id, int* storage_clas
 }
 
 void DistributedManager::stop_all_threads(int num_threads) {
-    MPI_Barrier(JOB_COMM);
     for (int i = 0; i < num_threads; i++) {
         MPI_Send(nullptr, 0, MPI_INT, node_id, REQUEST_TAG, JOB_COMM);
     }
