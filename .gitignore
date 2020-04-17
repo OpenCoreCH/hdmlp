@@ -4,3 +4,4 @@ venv/
 build/
 dist/
 hdmlp.egg-info/
+MANIFEST

@@ -8,3 +8,4 @@ Using setuptools: ```python setup.py install```
 - Python 3
 - Any MPI implementation (e.g. OpenMPI)
 - cmake
+- libconfig
