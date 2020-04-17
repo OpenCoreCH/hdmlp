@@ -2,7 +2,7 @@
 #include <dirent.h>
 #include <codecvt>
 #include <locale>
-#include <iostream>
+#include <algorithm>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -72,7 +72,7 @@ void FileSystemBackend::init_mappings() {
     }
     closedir(dp);
     // Ensure that all nodes have same file ids by sorting them
-    sort(file_information.begin(), file_information.end(), [=](FileInformation& a, FileInformation& b) {
+    std::sort(file_information.begin(), file_information.end(), [=](FileInformation& a, FileInformation& b) {
              return a.label + a.file_name > b.label + b.file_name;
          }
     );

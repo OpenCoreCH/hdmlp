@@ -1,4 +1,4 @@
-#include <iostream>
+#include <cstring>
 #include <thread>
 #include "../include/MemoryPrefetcher.h"
 #include "../include/MetadataStore.h"

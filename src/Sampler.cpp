@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 #include "../include/Sampler.h"
 
 Sampler::Sampler(StorageBackend* backend, // NOLINT(cert-msc32-c,cert-msc51-cpp)
@@ -90,7 +91,7 @@ void Sampler::get_prefetch_string(int node_id,
     for (const auto &pair : access_freq) {
         access_freq_vec.emplace_back(pair);
     }
-    sort(access_freq_vec.begin(), access_freq_vec.end(), [=](std::pair<int, int>& a, std::pair<int, int>& b) {
+    std::sort(access_freq_vec.begin(), access_freq_vec.end(), [=](std::pair<int, int>& a, std::pair<int, int>& b) {
              return a.second > b.second;
          }
     );

@@ -20,7 +20,7 @@ Configuration::Configuration(const std::string& config_path) {
 std::string Configuration::get_string_entry(const std::string& key) {
     std::string val;
     try {
-         val = (std::string) cfg.lookup(key);
+         val = cfg.lookup(key).c_str();
     } catch(const libconfig::SettingNotFoundException &nfex) {
 
     }
@@ -69,7 +69,7 @@ void Configuration::get_storage_classes(std::vector<unsigned long long int> *cap
                 libconfig::Setting& backend_options = storage_class.lookup("backend_options");
                 for (int j = 0; j < backend_options.getLength(); j++) {
                     const libconfig::Setting& child = backend_options[j];
-                    backend_options_map[child.getName()] = (std::string) backend_options.lookup(child.getName());
+                    backend_options_map[child.getName()] = backend_options.lookup(child.getName()).c_str();
                 }
             }
             pf_backend_options->push_back(backend_options_map);

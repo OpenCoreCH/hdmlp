@@ -1,6 +1,6 @@
 #include <iostream>
-#include <chrono>
 #include <thread>
+#include <cstring>
 #include "../include/StagingBufferPrefetcher.h"
 
 StagingBufferPrefetcher::StagingBufferPrefetcher(char* staging_buffer, unsigned long long int buffer_size, int node_id,

@@ -1,5 +1,5 @@
-#include <iostream>
 #include <codecvt>
+#include <locale>
 #include "../include/Prefetcher.h"
 #include "../include/FileSystemBackend.h"
 #include "../include/Configuration.h"
