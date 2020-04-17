@@ -1,5 +1,4 @@
-import hdmlp
-import time
+from hdmlp import hdmlp
 
 batch_size = 128
 epochs = 10

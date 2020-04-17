@@ -1,11 +1,10 @@
 from .hdmlpvision import HDMLPVisionDataset
-import hdmlp
+from hdmlp import hdmlp
 
 from PIL import Image
 
 import os
 import os.path
-import numpy as np
 import io
 
 

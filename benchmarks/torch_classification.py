@@ -1,14 +1,13 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torchvision
-from torchvision import datasets, models, transforms
+from torchvision import models, transforms
 import time
 import os
 import copy
-import hdmlp
-from lib.torch.hdmlpfolder import HDMLPImageFolder
-from lib.torch.hdmlpdataloader import HDMLPDataLoader
+from hdmlp import hdmlp
+from hdmlp.lib.torch.hdmlpfolder import HDMLPImageFolder
+from hdmlp.lib.torch.hdmlpdataloader import HDMLPDataLoader
 
 
 def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_inception=False):

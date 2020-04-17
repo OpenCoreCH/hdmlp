@@ -1,6 +1,6 @@
 import os
 import torch
-import hdmlp
+from hdmlp import hdmlp
 from .hdmlpfolder import HDMLPImageFolder
 
 META_FILE = "meta.bin"

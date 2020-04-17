@@ -36,7 +36,7 @@ class Job:
 
     def _get_lib_path(self, configured_path) -> str:
         if configured_path is None:
-            folder = pathlib.Path(__file__).parent.absolute() / "libhdmlp"
+            folder = pathlib.Path(__file__).parent.parent.absolute()
             library_name = "libhdmlp.so"
             if platform == "darwin":
                 library_name = "libhdmlp.dylib"

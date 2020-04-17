@@ -1,5 +1,5 @@
-from lib.torch.hdmlpimagenet import HDMLPImageNet
-import hdmlp
+from hdmlp.lib.torch.hdmlpimagenet import HDMLPImageNet
+from hdmlp import hdmlp
 
 batch_size = 128
 epochs = 1
