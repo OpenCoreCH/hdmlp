@@ -32,7 +32,7 @@ num_classes = 2
 # Batch size for training (change depending on how much memory you have)
 batch_size = 64
 # Number of epochs to train for
-num_epochs = 4
+num_epochs = 1
 # Flag for feature extracting. When False, we finetune the whole model, when True we only update the reshaped layer params
 feature_extract = False
 # Which file loading framework to use
@@ -233,7 +233,7 @@ if __name__ == "__main__":
     if backend == "hdmlp":
         hdmlp_jobs = {x: hdmlp.Job(os.path.join(data_dir, x), batch_size, num_epochs, 'uniform', drop_last_batch, seed, config_path, lib_path) for x in ['train', 'val']}
         image_datasets = {x: HDMLPImageFolder(os.path.join(data_dir, x), hdmlp_jobs[x], data_transforms[x]) for x in ['train', 'val']}
-        dataloaders_dict = {x: HDMLPDataLoader(image_datasets[x], batch_size, True, hdmlp_jobs[x].no_nodes(), hdmlp_jobs[x].node_id()) for x in ['train', 'val']}
+        dataloaders_dict = {x: HDMLPDataLoader(image_datasets[x], batch_size, drop_last_batch, hdmlp_jobs[x].no_nodes(), hdmlp_jobs[x].node_id()) for x in ['train', 'val']}
         hvd.init()
     elif backend == "torchvision":
         hvd.init()

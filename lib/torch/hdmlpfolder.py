@@ -153,7 +153,6 @@ class HDMLPImageFolder(HDMLPDatasetFolder):
 
     def __getitem__(self, item):
         folder_label, raw_sample = self.job.get()
-        print(folder_label)
         sample = pil_decode(raw_sample)
         target = self.class_to_idx[folder_label]
         if self.transform is not None:
