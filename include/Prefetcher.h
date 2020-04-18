@@ -51,6 +51,8 @@ private:
     int n;
     int job_id;
     int no_distributed_threads;
+    int networkbandwidth_clients;
+    int networkbandwidth_filesystem;
 
     void init_config(const std::wstring& path);
     void init_threads();

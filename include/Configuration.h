@@ -17,10 +17,10 @@ public:
                              std::vector<std::map<std::string, std::string>>* pf_backend_options);
     void get_pfs_bandwidth(std::map<int, int> *bandwidths);
     int get_no_distributed_threads();
+    void get_bandwidths(int* networkbandwidth_clients, int* networkbandwith_filesystem);
 
 private:
     libconfig::Config cfg;
-
 
 };
 

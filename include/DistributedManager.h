@@ -23,7 +23,7 @@ public:
     int get_node_id();
     void serve();
     bool fetch(int file_id, char* dst, int thread_id);
-    bool get_remote_storage_class(int file_id, int* storage_class);
+    int get_remote_storage_class(int file_id);
     void distribute_prefetch_strings(std::vector<int>* local_prefetch_string,
                                      std::vector<std::vector<int>::const_iterator>* storage_class_ends,
                                      int num_storage_classes);

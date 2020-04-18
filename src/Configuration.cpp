@@ -92,3 +92,8 @@ void Configuration::get_pfs_bandwidth(std::map<int, int>* bandwidths) {
 int Configuration::get_no_distributed_threads() {
     return get_int_entry("distributed_threads");
 }
+
+void Configuration::get_bandwidths(int* networkbandwidth_clients, int* networkbandwith_filesystem) {
+    *networkbandwidth_clients = get_int_entry("b_c");
+    *networkbandwith_filesystem = get_int_entry("b_fs");
+}

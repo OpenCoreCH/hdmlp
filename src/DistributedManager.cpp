@@ -164,11 +164,11 @@ int DistributedManager::generate_and_broadcast_seed() {
 }
 
 /**
- * @return true if currently available at remote node, false otherwise
+ * Sets storage class to the lowest available remote storage class, 0 if none available
  */
-bool DistributedManager::get_remote_storage_class(int file_id, int* storage_class) {
+int DistributedManager::get_remote_storage_class(int file_id) {
     if (file_availability.count(file_id) == 0) {
-        return false;
+        return 0;
     }
     FileAvailability fa = file_availability[file_id];
     int remote_offset = fa.offset;
@@ -183,10 +183,9 @@ bool DistributedManager::get_remote_storage_class(int file_id, int* storage_clas
     if (pf_backends[remote_storage_class - 1] == nullptr ||
         pf_backends[remote_storage_class - 1]->get_prefetch_offset() > remote_offset + REMOTE_PREFETCH_OFFSET_DIFF ||
         pf_backends[remote_storage_class - 1]->is_done()) {
-        *storage_class = remote_storage_class;
-        return true;
+        return remote_storage_class;
     }
-    return false;
+    return 0;
 }
 
 void DistributedManager::stop_all_threads(int num_threads) {

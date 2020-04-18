@@ -17,9 +17,10 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidel
                        int job_id) {
     init_config(config_path);
     backend = new FileSystemBackend(dataset_path);
-    metadata_store = new MetadataStore;
+    metadata_store = new MetadataStore(networkbandwidth_clients, networkbandwidth_filesystem, &config_pfs_bandwidth, &config_bandwidths, &config_no_threads);
     distr_manager = new DistributedManager(metadata_store, backend);
     n = distr_manager->get_no_nodes();
+    metadata_store->set_no_nodes(n);
     node_id = distr_manager->get_node_id();
     this->job_id = job_id;
     if (seed == 0) {
@@ -41,6 +42,7 @@ void Prefetcher::init_config(const std::wstring& path) {
     config.get_storage_classes(&config_capacities, &config_no_threads, &config_bandwidths, &config_pf_backends, &config_pf_backend_options);
     config.get_pfs_bandwidth(&config_pfs_bandwidth);
     no_distributed_threads = config.get_no_distributed_threads();
+    config.get_bandwidths(&networkbandwidth_clients, &networkbandwidth_filesystem);
 }
 
 void Prefetcher::init_threads() {

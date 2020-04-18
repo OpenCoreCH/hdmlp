@@ -138,24 +138,19 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
 }
 
 void StagingBufferPrefetcher::fetch(int file_id, char* dst, int thread_id) {
-    int remote_storage_level;
-    bool remote_avail = distr_manager->get_remote_storage_class(file_id, &remote_storage_level);
+    int remote_storage_level = distr_manager->get_remote_storage_class(file_id);
     int local_storage_level = metadata_store->get_storage_level(file_id);
-    bool remote_success = false;
-    if (remote_avail) {
-        remote_success = distr_manager->fetch(file_id, dst, thread_id);
-        if (remote_success) {
-            std::cout << "Successful remote fetch" << std::endl;
-        } else {
-            std::cout << "Unsuccesful remote fetch" << std::endl;
+    int option_order[3];
+    metadata_store->get_option_order(local_storage_level, remote_storage_level, option_order);
+    if (option_order[0] == OPTION_REMOTE) {
+        if (distr_manager->fetch(file_id, dst, thread_id)) {
+            return;
         }
     }
-    if (!remote_success && local_storage_level == 0) {
-        //std::cout << "Fetching from PFS, file id: " << file_id << std::endl;
-        backend->fetch(file_id, dst);
-    } else if (!remote_success) {
-        //std::cout << "Fetching from local storage level " << local_storage_level << std::endl;
+    if (option_order[0] == OPTION_LOCAL || (option_order[0] == OPTION_REMOTE && option_order[1] == OPTION_LOCAL)) {
         pf_backends[local_storage_level - 1]->fetch(file_id, dst);
+    } else {
+        backend->fetch(file_id, dst);
     }
 }
 
