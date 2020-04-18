@@ -85,39 +85,17 @@ void MetadataStore::get_option_order(int local_storage_level, int remote_storage
     if (remote_storage_level != 0) {
         remote_speed = std::min(interp_storage_level_bandwidths[remote_storage_level], networkbandwidth_clients);
     }
-    if (pfs_speed > local_speed) {
-        if (local_speed > remote_speed) {
-            options[0] = OPTION_PFS;
-            options[1] = OPTION_LOCAL;
-            options[2] = OPTION_REMOTE;
-        } else {
-            if (pfs_speed > remote_speed) {
-                options[0] = OPTION_PFS;
-                options[1] = OPTION_REMOTE;
-                options[2] = OPTION_LOCAL;
-            } else {
-                options[0] = OPTION_REMOTE;
-                options[1] = OPTION_PFS;
-                options[2] = OPTION_LOCAL;
-            }
+    double speeds[] = {pfs_speed, remote_speed, local_speed};
+    options[0] = 0;
+    options[1] = 1;
+    options[2] = 2;
+    std::sort(options, options + 3, [&speeds](int& a, int& b) {
+        if (speeds[a] == speeds[b]) {
+            // Prefer local over remote over PFS in case of ties
+            return (a == OPTION_LOCAL) || (a == OPTION_REMOTE && b != OPTION_LOCAL);
         }
-    } else {
-        if (pfs_speed > remote_speed) {
-            options[0] = OPTION_LOCAL;
-            options[1] = OPTION_PFS;
-            options[2] = OPTION_REMOTE;
-        } else {
-            if (remote_speed > local_speed) {
-                options[0] = OPTION_REMOTE;
-                options[1] = OPTION_LOCAL;
-                options[2] = OPTION_PFS;
-            } else {
-                options[0] = OPTION_LOCAL;
-                options[1] = OPTION_REMOTE;
-                options[2] = OPTION_PFS;
-            }
-        }
-    }
+        return speeds[a] > speeds[b];
+    });
 }
 
 

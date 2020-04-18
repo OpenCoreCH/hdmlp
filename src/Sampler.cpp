@@ -127,10 +127,10 @@ void Sampler::get_prefetch_string(int node_id, const std::vector<unsigned long l
                 if (first_accesses.count(b) == 0) {
                     return true;
                 }
-                return first_accesses[a] > first_accesses[b];
+                return first_accesses[a] < first_accesses[b];
             }
             );
-            storage_class_begin = storage_class_end + 1;
+            storage_class_begin = storage_class_end;
         }
     }
 }
