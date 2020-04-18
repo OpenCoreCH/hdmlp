@@ -80,10 +80,9 @@ void Sampler::get_access_frequency(std::map<int, int>* access_freq, int node_id,
 }
 
 
-void Sampler::get_prefetch_string(int node_id,
-                                  const std::vector<unsigned long long int> *capacities,
-                                  std::vector<int> *prefetch_string,
-                                  std::vector<std::vector<int>::const_iterator>* storage_class_ends) {
+void Sampler::get_prefetch_string(int node_id, const std::vector<unsigned long long int>* capacities,
+                                  std::vector<int>* prefetch_string,
+                                  std::vector<std::vector<int>::iterator>* storage_class_ends, bool in_order) {
     std::map<int, int> access_freq;
     get_access_frequency(&access_freq, node_id, epochs);
     std::vector<std::pair<int, int>> access_freq_vec;
@@ -91,7 +90,7 @@ void Sampler::get_prefetch_string(int node_id,
     for (const auto &pair : access_freq) {
         access_freq_vec.emplace_back(pair);
     }
-    std::sort(access_freq_vec.begin(), access_freq_vec.end(), [=](std::pair<int, int>& a, std::pair<int, int>& b) {
+    std::sort(access_freq_vec.begin(), access_freq_vec.end(), [](std::pair<int, int>& a, std::pair<int, int>& b) {
              return a.second > b.second;
          }
     );
@@ -104,7 +103,7 @@ void Sampler::get_prefetch_string(int node_id,
         if (curr_size + size > (*capacities)[curr_storage_class]) {
             storage_class_ends->push_back(prefetch_string->end());
             if (curr_storage_class < num_storage_classes - 1) {
-                curr_storage_class += 1;
+                curr_storage_class++;
                 curr_size = 0;
             } else {
                 break;
@@ -116,6 +115,24 @@ void Sampler::get_prefetch_string(int node_id,
     if (storage_class_ends->size() < num_storage_classes - 1) {
         storage_class_ends->push_back(prefetch_string->end());
     }
+    if (in_order) {
+        std::map<int, int> first_accesses;
+        get_first_accesses(&first_accesses, node_id, epochs);
+        auto storage_class_begin = prefetch_string->begin();
+        for (auto& storage_class_end : *storage_class_ends) {
+            std::sort(storage_class_begin, storage_class_end, [&first_accesses](int& a, int& b) {
+                if (first_accesses.count(a) == 0) {
+                    return false;
+                }
+                if (first_accesses.count(b) == 0) {
+                    return true;
+                }
+                return first_accesses[a] > first_accesses[b];
+            }
+            );
+            storage_class_begin = storage_class_end + 1;
+        }
+    }
 }
 
 void Sampler::get_access_frequency_for_seq(std::vector<int>* seq, std::map<int, int>* access_freq, int node_id) {
@@ -123,7 +140,7 @@ void Sampler::get_access_frequency_for_seq(std::vector<int>* seq, std::map<int, 
     get_node_access_string_for_seq(seq, node_id, &access_string);
     for (const auto& file_id : access_string) {
         if (access_freq->count(file_id)) {
-            (*access_freq)[file_id] += 1;
+            (*access_freq)[file_id]++;
         } else {
             (*access_freq)[file_id] = 1;
         }
@@ -132,4 +149,24 @@ void Sampler::get_access_frequency_for_seq(std::vector<int>* seq, std::map<int, 
 
 void Sampler::advance_batch() {
     shuffle_sequence(&access_sequence);
+}
+
+void Sampler::get_first_accesses(std::map<int, int>* first_accesses, int node_id, int lookahead) {
+    std::default_random_engine engine_copy = random_engine;
+    std::vector<int> curr_access_seq = access_sequence;
+    int offset = 0;
+    for (int i = 0; i < lookahead; i++) {
+        std::vector<int> access_string;
+        get_node_access_string_for_seq(&curr_access_seq, node_id, &access_string);
+        for (int file_id : access_string) {
+            if (first_accesses->count(file_id) == 0) {
+                (*first_accesses)[file_id] = offset;
+            }
+            offset++;
+        }
+        if (i != lookahead - 1) {
+            shuffle_sequence(&curr_access_seq);
+        }
+    }
+    random_engine = engine_copy;
 }

@@ -20,10 +20,9 @@ public:
             int seed);
 
     void get_node_access_string(int node_id, std::vector<int>* access_string);
-    void get_prefetch_string(int node_id,
-                             const std::vector<unsigned long long int> *capacities,
+    void get_prefetch_string(int node_id, const std::vector<unsigned long long int>* capacities,
                              std::vector<int>* prefetch_string,
-                             std::vector<std::vector<int>::const_iterator>* storage_class_ends);
+                             std::vector<std::vector<int>::iterator>* storage_class_ends, bool in_order);
     void advance_batch();
 
 private:
@@ -42,6 +41,7 @@ private:
     void get_access_frequency(std::map<int, int>* access_freq, int node_id, int lookahead);
     void get_access_frequency_for_seq(std::vector<int>* seq, std::map<int, int>* access_freq, int node_id);
     void get_node_access_string_for_seq(std::vector<int> *seq, int node_id, std::vector<int> *access_string);
+    void get_first_accesses(std::map<int, int>* first_accesses, int node_id, int lookahead);
 
 };
 

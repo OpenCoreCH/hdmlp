@@ -38,7 +38,7 @@ private:
     MetadataStore* metadata_store;
     DistributedManager* distr_manager;
     std::vector<int> prefetch_string;
-    std::vector<std::vector<int>::const_iterator> storage_class_ends;
+    std::vector<std::vector<int>::iterator> storage_class_ends;
     std::vector<unsigned long long int> config_capacities;
     std::vector<int> config_no_threads;
     std::vector<std::string> config_pf_backends;

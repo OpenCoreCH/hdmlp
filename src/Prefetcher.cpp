@@ -27,7 +27,7 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidel
         seed = distr_manager->generate_and_broadcast_seed();
     }
     sampler = new Sampler(backend, n, batch_size, epochs, distr_scheme, drop_last_batch, seed);
-    sampler->get_prefetch_string(node_id, &config_capacities, &prefetch_string, &storage_class_ends);
+    sampler->get_prefetch_string(node_id, &config_capacities, &prefetch_string, &storage_class_ends, true);
     distr_manager->distribute_prefetch_strings(&prefetch_string, &storage_class_ends, config_no_threads.size());
     init_threads();
     distr_manager->set_prefetcher_backends(pf_backends);
@@ -74,7 +74,7 @@ void Prefetcher::init_threads() {
                 storage_class_threads.push_back(std::move(thread));
             } else {
                 if (k == 0) {
-                    std::vector<int>::const_iterator prefetch_start;
+                    std::vector<int>::iterator prefetch_start;
                     if (j == 1) {
                         prefetch_start = prefetch_string.begin();
                     } else {

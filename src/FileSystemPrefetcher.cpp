@@ -8,8 +8,8 @@
 #include "../include/MetadataStore.h"
 
 FileSystemPrefetcher::FileSystemPrefetcher(std::map<std::string, std::string> &backend_options,
-                                           std::vector<int>::const_iterator prefetch_start,
-                                           std::vector<int>::const_iterator prefetch_end,
+                                           std::vector<int>::iterator prefetch_start,
+                                           std::vector<int>::iterator prefetch_end,
                                            unsigned long long int capacity, StorageBackend* backend,
                                            MetadataStore* metadata_store, int storage_level, int job_id,
                                            int node_id) :

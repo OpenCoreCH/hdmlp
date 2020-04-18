@@ -25,7 +25,7 @@ public:
     bool fetch(int file_id, char* dst, int thread_id);
     int get_remote_storage_class(int file_id);
     void distribute_prefetch_strings(std::vector<int>* local_prefetch_string,
-                                     std::vector<std::vector<int>::const_iterator>* storage_class_ends,
+                                     std::vector<std::vector<int>::iterator>* storage_class_ends,
                                      int num_storage_classes);
     int generate_and_broadcast_seed();
     void stop_all_threads(int num_threads);

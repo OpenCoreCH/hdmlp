@@ -89,7 +89,7 @@ bool DistributedManager::fetch(int file_id, char* dst, int thread_id) {
 }
 
 void DistributedManager::distribute_prefetch_strings(std::vector<int>* local_prefetch_string,
-                                                     std::vector<std::vector<int>::const_iterator>* storage_class_ends,
+                                                     std::vector<std::vector<int>::iterator>* storage_class_ends,
                                                      int num_storage_classes) {
     int local_size = local_prefetch_string->size();
     int global_max_size;
@@ -101,7 +101,7 @@ void DistributedManager::distribute_prefetch_strings(std::vector<int>* local_pre
     for (int i = 0; i < local_size; i++) {
         send_data[i] = (*local_prefetch_string)[i];
     }
-    std::vector<int>::const_iterator prev_end = local_prefetch_string->begin();
+    auto prev_end = local_prefetch_string->begin();
     // Store number of elements per storage class in send_data
     send_data[global_max_size] = storage_class_ends->size();
     for (int i = 0; i < storage_class_ends->size(); i++) {

@@ -12,8 +12,8 @@
 class MemoryPrefetcher : public PrefetcherBackend {
 public:
     MemoryPrefetcher(std::map<std::string, std::string> &backend_options,
-                              std::vector<int>::const_iterator prefetch_start,
-                              std::vector<int>::const_iterator prefetch_end,
+                              std::vector<int>::iterator prefetch_start,
+                              std::vector<int>::iterator prefetch_end,
                               unsigned long long int capacity, StorageBackend* backend, MetadataStore* metadata_store,
                               int storage_level, bool alloc_buffer);
     ~MemoryPrefetcher() override;
@@ -29,8 +29,8 @@ protected:
     std::unordered_map<int, int> buffer_offsets;
     StorageBackend* backend;
     MetadataStore* metadata_store;
-    std::vector<int>::const_iterator prefetch_start;
-    std::vector<int>::const_iterator prefetch_end;
+    std::vector<int>::iterator prefetch_start;
+    std::vector<int>::iterator prefetch_end;
     std::mutex prefetcher_mutex;
     int num_elems;
     int prefetch_offset = 0;

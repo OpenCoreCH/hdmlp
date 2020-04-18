@@ -6,8 +6,8 @@
 PrefetcherBackend* PrefetcherBackendFactory::create(const std::string &prefetcher_backend,
                                                     std::map<std::string, std::string> &backend_options,
                                                     unsigned long long int capacity,
-                                                    std::vector<int>::const_iterator start,
-                                                    std::vector<int>::const_iterator end,
+                                                    std::vector<int>::iterator start,
+                                                    std::vector<int>::iterator end,
                                                     StorageBackend* storage_backend,
                                                     MetadataStore* metadata_store, int storage_level, int job_id,
                                                     int node_id) {
