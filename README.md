@@ -1,7 +1,9 @@
 # HDMLP: Hierarchical Distributed Machine Learning Prefetcher
 
 ## Installation
-Using setuptools: ```python setup.py install```
+Using setuptools:
+- Clone this repo and the submodules using ```git clone --recurse-submodules```
+- Run ```python setup.py install```
 
 ## Requirements
 
