@@ -7,11 +7,16 @@
 class FileSystemBackend : public StorageBackend {
 public:
     explicit FileSystemBackend(const std::wstring& path);
+
     std::unordered_map<int, std::string> get_id_mapping() override;
+
     std::string get_label(int file_id) override;
+
     int get_length() override;
+
     unsigned long get_file_size(int file_id) override;
-    void fetch(int file_id, char *dst) override;
+
+    void fetch(int file_id, char* dst) override;
 
 private:
     struct FileInformation {
@@ -25,7 +30,8 @@ private:
     std::unordered_map<int, std::string> id_mappings;
 
     void init_mappings();
-    std::string abs_path(const std::string *rel_path);
+
+    std::string abs_path(const std::string* rel_path);
 };
 
 

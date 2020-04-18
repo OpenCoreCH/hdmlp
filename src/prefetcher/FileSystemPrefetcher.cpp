@@ -7,13 +7,13 @@
 #include "../../include/prefetcher/FileSystemPrefetcher.h"
 #include "../../include/utils/MetadataStore.h"
 
-FileSystemPrefetcher::FileSystemPrefetcher(std::map<std::string, std::string> &backend_options,
+FileSystemPrefetcher::FileSystemPrefetcher(std::map<std::string, std::string>& backend_options,
                                            std::vector<int>::iterator prefetch_start,
                                            std::vector<int>::iterator prefetch_end,
                                            unsigned long long int capacity, StorageBackend* backend,
                                            MetadataStore* metadata_store, int storage_level, int job_id,
                                            int node_id) :
-                                           MemoryPrefetcher(backend_options, prefetch_start, prefetch_end, capacity, backend, metadata_store, storage_level, false) {
+        MemoryPrefetcher(backend_options, prefetch_start, prefetch_end, capacity, backend, metadata_store, storage_level, false) {
     path = backend_options["path"];
     if (path.back() != '/') {
         path += '/';
@@ -26,7 +26,7 @@ FileSystemPrefetcher::FileSystemPrefetcher(std::map<std::string, std::string> &b
     path = path + std::to_string(job_id) + "_" + std::to_string(node_id);
     std::cout << "PATH = " << path << std::endl;
 
-    if ((fd = open(path.c_str(), O_RDWR | O_CREAT | O_TRUNC, (mode_t)0600)) < 0) { // NOLINT(hicpp-signed-bitwise)
+    if ((fd = open(path.c_str(), O_RDWR | O_CREAT | O_TRUNC, (mode_t) 0600)) < 0) { // NOLINT(hicpp-signed-bitwise)
         throw std::runtime_error("Error opening file for prefetching");
     }
     if (lseek(fd, capacity - 1, SEEK_SET) < 0) {

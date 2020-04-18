@@ -1,5 +1,6 @@
 #ifndef HDMLP_STAGINGBUFFERPREFETCHER_H
 #define HDMLP_STAGINGBUFFERPREFETCHER_H
+
 #include <deque>
 #include "../utils/Sampler.h"
 #include "PrefetcherBackend.h"
@@ -12,9 +13,13 @@ public:
     StagingBufferPrefetcher(char* staging_buffer, unsigned long long int buffer_size, int node_id, int no_threads,
                             Sampler* sampler, StorageBackend* backend, PrefetcherBackend** pf_backends,
                             MetadataStore* metadata_store, DistributedManager* distr_manager);
+
     ~StagingBufferPrefetcher();
+
     void prefetch(int thread_id);
+
     void advance_read_offset(unsigned long long int new_offset);
+
     unsigned long long int get_next_file_end();
 
 private:

@@ -3,7 +3,7 @@
 #include "../../include/prefetcher/MemoryPrefetcher.h"
 #include "../../include/utils/MetadataStore.h"
 
-MemoryPrefetcher::MemoryPrefetcher(std::map<std::string, std::string> &backend_options,
+MemoryPrefetcher::MemoryPrefetcher(std::map<std::string, std::string>& backend_options,
                                    std::vector<int>::iterator prefetch_start,
                                    std::vector<int>::iterator prefetch_end,
                                    unsigned long long int capacity, StorageBackend* backend,
@@ -55,7 +55,7 @@ void MemoryPrefetcher::prefetch() {
     }
 }
 
-void MemoryPrefetcher::fetch(int file_id, char *dst) {
+void MemoryPrefetcher::fetch(int file_id, char* dst) {
     unsigned long len;
     char* loc = get_location(file_id, &len);
 

@@ -17,8 +17,11 @@ public:
                   std::vector<int>* no_threads);
 
     void insert_cached_file(int storage_level, int file_id);
+
     int get_storage_level(int file_id);
+
     void set_no_nodes(int n);
+
     void get_option_order(int local_storage_level, int remote_storage_level, int* options);
 
 private:

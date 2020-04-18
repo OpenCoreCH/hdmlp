@@ -34,8 +34,8 @@ int FileSystemBackend::get_length() {
 
 void FileSystemBackend::init_mappings() {
     std::vector<FileInformation> file_information;
-    struct dirent *entry = nullptr;
-    DIR *dp = nullptr;
+    struct dirent* entry = nullptr;
+    DIR* dp = nullptr;
 
     dp = opendir(path.c_str());
     if (dp == nullptr) {
@@ -44,8 +44,8 @@ void FileSystemBackend::init_mappings() {
     while ((entry = readdir(dp))) {
         if (entry->d_name[0] != '.' && entry->d_type == DT_DIR) {
             std::string dir_name = entry->d_name;
-            struct dirent *subentry = nullptr;
-            DIR *subp = nullptr;
+            struct dirent* subentry = nullptr;
+            DIR* subp = nullptr;
 
             subp = opendir((path + dir_name).c_str());
 
@@ -73,8 +73,8 @@ void FileSystemBackend::init_mappings() {
     closedir(dp);
     // Ensure that all nodes have same file ids by sorting them
     std::sort(file_information.begin(), file_information.end(), [](FileInformation& a, FileInformation& b) {
-             return a.label + a.file_name > b.label + b.file_name;
-         }
+                  return a.label + a.file_name > b.label + b.file_name;
+              }
     );
     for (int i = 0; i < file_information.size(); i++) {
         FileInformation fi = file_information[i];
@@ -98,7 +98,7 @@ unsigned long FileSystemBackend::get_file_size(int file_id) {
  * @param file_id
  * @param dst
  */
-void FileSystemBackend::fetch(int file_id, char *dst) {
+void FileSystemBackend::fetch(int file_id, char* dst) {
     std::string label = label_mappings[file_id];
     std::string rel_path = label + '/' + id_mappings[file_id];
     std::string file_name = abs_path(&rel_path);

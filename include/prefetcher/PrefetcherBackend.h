@@ -4,10 +4,15 @@
 class PrefetcherBackend {
 public:
     virtual ~PrefetcherBackend() = default;
+
     virtual void prefetch() = 0;
+
     virtual void fetch(int file_id, char* dst) = 0;
+
     virtual char* get_location(int file_id, unsigned long* len) = 0;
+
     virtual int get_prefetch_offset() = 0;
+
     virtual bool is_done() = 0;
 };
 

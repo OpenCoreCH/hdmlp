@@ -7,9 +7,9 @@
 Configuration::Configuration(const std::string& config_path) {
     try {
         cfg.readFile(config_path.c_str());
-    } catch(const libconfig::FileIOException &fioex) {
+    } catch (const libconfig::FileIOException& fioex) {
         throw std::runtime_error("I/O error while reading config file.");
-    } catch(const libconfig::ParseException &pex) {
+    } catch (const libconfig::ParseException& pex) {
         std::ostringstream error;
         error << "Parse error at " << pex.getFile() << ":" << pex.getLine()
               << " - " << pex.getError() << std::endl;
@@ -20,8 +20,8 @@ Configuration::Configuration(const std::string& config_path) {
 std::string Configuration::get_string_entry(const std::string& key) {
     std::string val;
     try {
-         val = cfg.lookup(key).c_str();
-    } catch(const libconfig::SettingNotFoundException &nfex) {
+        val = cfg.lookup(key).c_str();
+    } catch (const libconfig::SettingNotFoundException& nfex) {
 
     }
     return val;
@@ -31,13 +31,13 @@ int Configuration::get_int_entry(const std::string& key) {
     int val;
     try {
         val = cfg.lookup(key);
-    } catch(const libconfig::SettingNotFoundException &nfex) {
+    } catch (const libconfig::SettingNotFoundException& nfex) {
         val = -1;
     }
     return val;
 }
 
-void Configuration::get_storage_classes(std::vector<unsigned long long int> *capacities,
+void Configuration::get_storage_classes(std::vector<unsigned long long int>* capacities,
                                         std::vector<int>* threads,
                                         std::vector<std::map<int, int>>* bandwidths,
                                         std::vector<std::string>* pf_backends,

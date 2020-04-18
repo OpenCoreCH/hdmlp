@@ -3,7 +3,7 @@
 #include "../../include/utils/hdmlp_api.h"
 
 
-int setup(wchar_t * dataset_path,
+int setup(wchar_t* dataset_path,
           wchar_t* config_path,
           int batch_size,
           int epochs,
@@ -23,13 +23,13 @@ int setup(wchar_t * dataset_path,
         throw std::runtime_error("Maximal parallel jobs exceeded");
     }
     pf[job_id] = new Prefetcher(dataset_path,
-               config_path,
-               batch_size,
-               epochs,
-               distr_scheme,
-               drop_last_batch,
-               seed,
-               job_id);
+                                config_path,
+                                batch_size,
+                                epochs,
+                                distr_scheme,
+                                drop_last_batch,
+                                seed,
+                                job_id);
     return job_id;
 }
 

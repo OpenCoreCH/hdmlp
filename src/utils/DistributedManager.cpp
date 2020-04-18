@@ -3,7 +3,8 @@
 #include <thread>
 #include "../../include/utils/DistributedManager.h"
 
-DistributedManager::DistributedManager(MetadataStore* metadata_store, StorageBackend* storage_backend) { // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
+DistributedManager::DistributedManager(MetadataStore* metadata_store, // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
+                                       StorageBackend* storage_backend) {
     this->metadata_store = metadata_store;
     this->storage_backend = storage_backend;
     int initialized; // If multiple jobs run in parallel or MPI was already initialized by e.g. Horovod, initialize only once
@@ -47,7 +48,7 @@ void DistributedManager::serve() {
     while (true) {
         int req[2];
         MPI_Status status;
-        MPI_Recv(&req,2, MPI_INT, MPI_ANY_SOURCE, REQUEST_TAG, JOB_COMM, &status);
+        MPI_Recv(&req, 2, MPI_INT, MPI_ANY_SOURCE, REQUEST_TAG, JOB_COMM, &status);
         std::cout << "Got message" << std::endl;
         int source = status.MPI_SOURCE;
         if (source == node_id) {

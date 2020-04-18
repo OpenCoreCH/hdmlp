@@ -17,7 +17,8 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidel
                        int job_id) {
     init_config(config_path);
     backend = new FileSystemBackend(dataset_path);
-    metadata_store = new MetadataStore(networkbandwidth_clients, networkbandwidth_filesystem, &config_pfs_bandwidth, &config_bandwidths, &config_no_threads);
+    metadata_store = new MetadataStore(networkbandwidth_clients, networkbandwidth_filesystem, &config_pfs_bandwidth, &config_bandwidths,
+                                       &config_no_threads);
     distr_manager = new DistributedManager(metadata_store, backend);
     n = distr_manager->get_no_nodes();
     metadata_store->set_no_nodes(n);
@@ -47,7 +48,7 @@ void Prefetcher::init_config(const std::wstring& path) {
 
 void Prefetcher::init_threads() {
     int classes = config_no_threads.size();
-    pf_backends = new PrefetcherBackend*[classes - 1];
+    pf_backends = new PrefetcherBackend* [classes - 1];
     for (int i = 0; i < classes - 1; i++) {
         pf_backends[i] = nullptr;
     }
@@ -120,19 +121,19 @@ int Prefetcher::get_dataset_length() {
     return backend->get_length();
 }
 
-char *Prefetcher::get_staging_buffer() {
+char* Prefetcher::get_staging_buffer() {
     return staging_buffer;
 }
 
 Prefetcher::~Prefetcher() {
     int used_classes = threads.size();
-    for (auto &thread_list : threads) {
-        for (auto &thread : thread_list) {
+    for (auto& thread_list : threads) {
+        for (auto& thread : thread_list) {
             thread.join();
         }
     }
     distr_manager->stop_all_threads(distr_threads.size());
-    for (auto &distr_thread : distr_threads) {
+    for (auto& distr_thread : distr_threads) {
         distr_thread.join();
     }
     for (int i = 0; i < used_classes - 1; i++) {

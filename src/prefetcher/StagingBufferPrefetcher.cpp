@@ -67,7 +67,8 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
                 waiting_for_consumption = true;
                 // Ensure that overwriting is not possible after reset of pointer
                 while (entry_size >= read_offset) {
-                    std::cout << thread_id << ": Waiting for Read offset (2), entry size: " << entry_size << ", read_offset: " << read_offset << std::endl;
+                    std::cout << thread_id << ": Waiting for Read offset (2), entry size: " << entry_size << ", read_offset: " << read_offset
+                              << std::endl;
                     read_offset_cond_var.wait(crit_section_lock);
                 }
             }
@@ -78,7 +79,6 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
                 consumption_waiting_cond_var.notify_all();
             }
             crit_section_lock.unlock();
-
 
 
             strcpy(staging_buffer + local_staging_buffer_pointer, label.c_str());
@@ -120,7 +120,7 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
             sampler->advance_batch();
             prefetch_batch += 1;
             prefetch_offset = 0;
-            for(int i = 0; i < no_threads; i++) {
+            for (int i = 0; i < no_threads; i++) {
                 global_batch_done[i] = false;
             }
             batch_advancement_cond_var.notify_all();

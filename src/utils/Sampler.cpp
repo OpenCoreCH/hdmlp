@@ -50,8 +50,7 @@ void Sampler::get_node_access_string(int node_id, std::vector<int>* access_strin
 
 void Sampler::get_node_access_string_for_seq(std::vector<int>* seq, int node_id, std::vector<int>* access_string) {
     switch (distr_scheme) {
-        case 1:
-        {
+        case 1: {
             int offset = node_local_batch_size * node_id;
             for (int j = 0; j < batch_no; j++) {
                 for (int k = j * batch_size + offset;
@@ -87,18 +86,18 @@ void Sampler::get_prefetch_string(int node_id, const std::vector<unsigned long l
     get_access_frequency(&access_freq, node_id, epochs);
     std::vector<std::pair<int, int>> access_freq_vec;
     access_freq_vec.reserve(access_freq.size());
-    for (const auto &pair : access_freq) {
+    for (const auto& pair : access_freq) {
         access_freq_vec.emplace_back(pair);
     }
     std::sort(access_freq_vec.begin(), access_freq_vec.end(), [](std::pair<int, int>& a, std::pair<int, int>& b) {
-             return a.second > b.second;
-         }
+                  return a.second > b.second;
+              }
     );
     prefetch_string->reserve(access_freq_vec.size());
     unsigned long long curr_size = 0;
     int num_storage_classes = capacities->size();
     int curr_storage_class = 1;
-    for (const auto &pair : access_freq_vec) {
+    for (const auto& pair : access_freq_vec) {
         unsigned long size = backend->get_file_size(pair.first);
         if (curr_size + size > (*capacities)[curr_storage_class]) {
             storage_class_ends->push_back(prefetch_string->end());
@@ -121,14 +120,14 @@ void Sampler::get_prefetch_string(int node_id, const std::vector<unsigned long l
         auto storage_class_begin = prefetch_string->begin();
         for (auto& storage_class_end : *storage_class_ends) {
             std::sort(storage_class_begin, storage_class_end, [&first_accesses](int& a, int& b) {
-                if (first_accesses.count(a) == 0) {
-                    return false;
-                }
-                if (first_accesses.count(b) == 0) {
-                    return true;
-                }
-                return first_accesses[a] < first_accesses[b];
-            }
+                          if (first_accesses.count(a) == 0) {
+                              return false;
+                          }
+                          if (first_accesses.count(b) == 0) {
+                              return true;
+                          }
+                          return first_accesses[a] < first_accesses[b];
+                      }
             );
             storage_class_begin = storage_class_end;
         }

@@ -21,12 +21,19 @@ public:
                bool drop_last_batch,
                int seed,
                int job_id);
+
     ~Prefetcher();
+
     char* get_staging_buffer();
+
     unsigned long long int get_next_file_end();
+
     void notify_data_consumed(unsigned long long int until_offset);
+
     int get_dataset_length();
+
     int get_node_id();
+
     int get_no_nodes();
 
 private:
@@ -55,7 +62,9 @@ private:
     int networkbandwidth_filesystem;
 
     void init_config(const std::wstring& path);
+
     void init_threads();
+
     void init_distr_threads();
 };
 

@@ -2,7 +2,8 @@
 #include <algorithm>
 
 
-MetadataStore::MetadataStore(int networkbandwidth_clients, int networkbandwidth_filesystem, // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
+MetadataStore::MetadataStore(int networkbandwidth_clients, // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
+                             int networkbandwidth_filesystem,
                              std::map<int, int>* pfs_bandwidths,
                              std::vector<std::map<int, int>>* storage_level_bandwidths,
                              std::vector<int>* no_threads) {
