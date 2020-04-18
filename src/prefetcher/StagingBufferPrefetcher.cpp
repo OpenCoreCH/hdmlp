@@ -1,7 +1,7 @@
 #include <iostream>
 #include <thread>
 #include <cstring>
-#include "../include/StagingBufferPrefetcher.h"
+#include "../../include/prefetcher/StagingBufferPrefetcher.h"
 
 StagingBufferPrefetcher::StagingBufferPrefetcher(char* staging_buffer, unsigned long long int buffer_size, int node_id,
                                                  int no_threads,

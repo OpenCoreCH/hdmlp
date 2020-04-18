@@ -6,8 +6,8 @@
 #include <vector>
 #include <map>
 #include "PrefetcherBackend.h"
-#include "StorageBackend.h"
-#include "MetadataStore.h"
+#include "../storage/StorageBackend.h"
+#include "../utils/MetadataStore.h"
 
 class PrefetcherBackendFactory {
 public:

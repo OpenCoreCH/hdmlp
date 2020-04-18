@@ -4,12 +4,12 @@
 #include <string>
 #include <deque>
 #include <thread>
-#include "StorageBackend.h"
-#include "Sampler.h"
+#include "../storage/StorageBackend.h"
+#include "../utils/Sampler.h"
 #include "StagingBufferPrefetcher.h"
 #include "PrefetcherBackend.h"
-#include "MetadataStore.h"
-#include "DistributedManager.h"
+#include "../utils/MetadataStore.h"
+#include "../utils/DistributedManager.h"
 
 class Prefetcher {
 public:

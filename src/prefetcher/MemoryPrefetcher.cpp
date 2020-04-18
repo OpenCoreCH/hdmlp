@@ -1,7 +1,7 @@
 #include <cstring>
 #include <thread>
-#include "../include/MemoryPrefetcher.h"
-#include "../include/MetadataStore.h"
+#include "../../include/prefetcher/MemoryPrefetcher.h"
+#include "../../include/utils/MetadataStore.h"
 
 MemoryPrefetcher::MemoryPrefetcher(std::map<std::string, std::string> &backend_options,
                                    std::vector<int>::iterator prefetch_start,

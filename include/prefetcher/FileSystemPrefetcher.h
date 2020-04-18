@@ -5,8 +5,8 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "StorageBackend.h"
-#include "MetadataStore.h"
+#include "../storage/StorageBackend.h"
+#include "../utils/MetadataStore.h"
 #include "MemoryPrefetcher.h"
 
 class FileSystemPrefetcher : public MemoryPrefetcher {

@@ -1,10 +1,10 @@
 #include <codecvt>
 #include <locale>
-#include "../include/Prefetcher.h"
-#include "../include/FileSystemBackend.h"
-#include "../include/Configuration.h"
-#include "../include/StagingBufferPrefetcher.h"
-#include "../include/PrefetcherBackendFactory.h"
+#include "../../include/prefetcher/Prefetcher.h"
+#include "../../include/storage/FileSystemBackend.h"
+#include "../../include/utils/Configuration.h"
+#include "../../include/prefetcher/StagingBufferPrefetcher.h"
+#include "../../include/prefetcher/PrefetcherBackendFactory.h"
 
 
 Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)

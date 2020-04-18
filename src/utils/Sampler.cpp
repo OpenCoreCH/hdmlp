@@ -1,6 +1,6 @@
 #include <iostream>
 #include <algorithm>
-#include "../include/Sampler.h"
+#include "../../include/utils/Sampler.h"
 
 Sampler::Sampler(StorageBackend* backend, // NOLINT(cert-msc32-c,cert-msc51-cpp)
                  int n,

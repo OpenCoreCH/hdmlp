@@ -1,4 +1,4 @@
-#include "../include/MetadataStore.h"
+#include "../../include/utils/MetadataStore.h"
 #include <algorithm>
 
 
@@ -97,5 +97,3 @@ void MetadataStore::get_option_order(int local_storage_level, int remote_storage
         return speeds[a] > speeds[b];
     });
 }
-
-

@@ -4,8 +4,8 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <iostream>
-#include "../include/FileSystemPrefetcher.h"
-#include "../include/MetadataStore.h"
+#include "../../include/prefetcher/FileSystemPrefetcher.h"
+#include "../../include/utils/MetadataStore.h"
 
 FileSystemPrefetcher::FileSystemPrefetcher(std::map<std::string, std::string> &backend_options,
                                            std::vector<int>::iterator prefetch_start,

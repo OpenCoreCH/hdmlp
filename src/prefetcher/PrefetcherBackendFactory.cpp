@@ -1,7 +1,7 @@
 #include <iostream>
-#include "../include/PrefetcherBackendFactory.h"
-#include "../include/MemoryPrefetcher.h"
-#include "../include/FileSystemPrefetcher.h"
+#include "../../include/prefetcher/PrefetcherBackendFactory.h"
+#include "../../include/prefetcher/MemoryPrefetcher.h"
+#include "../../include/prefetcher/FileSystemPrefetcher.h"
 
 PrefetcherBackend* PrefetcherBackendFactory::create(const std::string &prefetcher_backend,
                                                     std::map<std::string, std::string> &backend_options,

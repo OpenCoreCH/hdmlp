@@ -8,8 +8,8 @@
 #define REQUEST_TAG 0
 
 #include "MetadataStore.h"
-#include "PrefetcherBackend.h"
-#include "StorageBackend.h"
+#include "../prefetcher/PrefetcherBackend.h"
+#include "../storage/StorageBackend.h"
 #include <vector>
 #include <mpi.h>
 

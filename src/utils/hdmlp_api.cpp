@@ -1,6 +1,6 @@
-#include "../include/FileSystemBackend.h"
-#include "../include/Prefetcher.h"
-#include "../include/hdmlp_api.h"
+#include "../../include/storage/FileSystemBackend.h"
+#include "../../include/prefetcher/Prefetcher.h"
+#include "../../include/utils/hdmlp_api.h"
 
 
 int setup(wchar_t * dataset_path,

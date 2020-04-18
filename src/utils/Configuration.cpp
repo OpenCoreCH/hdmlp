@@ -2,7 +2,7 @@
 #include <sstream>
 #include <map>
 #include <vector>
-#include "../include/Configuration.h"
+#include "../../include/utils/Configuration.h"
 
 Configuration::Configuration(const std::string& config_path) {
     try {

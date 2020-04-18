@@ -1,10 +1,10 @@
 #ifndef HDMLP_STAGINGBUFFERPREFETCHER_H
 #define HDMLP_STAGINGBUFFERPREFETCHER_H
 #include <deque>
-#include "Sampler.h"
+#include "../utils/Sampler.h"
 #include "PrefetcherBackend.h"
-#include "MetadataStore.h"
-#include "DistributedManager.h"
+#include "../utils/MetadataStore.h"
+#include "../utils/DistributedManager.h"
 
 
 class StagingBufferPrefetcher {

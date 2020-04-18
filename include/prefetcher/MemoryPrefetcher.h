@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 #include "PrefetcherBackend.h"
-#include "StorageBackend.h"
-#include "MetadataStore.h"
+#include "../storage/StorageBackend.h"
+#include "../utils/MetadataStore.h"
 
 class MemoryPrefetcher : public PrefetcherBackend {
 public:

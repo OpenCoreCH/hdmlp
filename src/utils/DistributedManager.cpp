@@ -1,7 +1,7 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
-#include "../include/DistributedManager.h"
+#include "../../include/utils/DistributedManager.h"
 
 DistributedManager::DistributedManager(MetadataStore* metadata_store, StorageBackend* storage_backend) { // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
     this->metadata_store = metadata_store;

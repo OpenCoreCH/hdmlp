@@ -5,7 +5,7 @@
 #include <vector>
 #include <random>
 #include <map>
-#include "../include/StorageBackend.h"
+#include "../storage/StorageBackend.h"
 
 class Sampler {
 public:
