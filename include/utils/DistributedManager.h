@@ -53,6 +53,7 @@ private:
     int node_id;
     bool has_initialized_mpi = false;
     std::unordered_map<int, FileAvailability> file_availability; // Stores mapping of file_id -> availability info
+    std::mutex file_availability_mutex;
 
     void parse_received_prefetch_data(int* rcv_data, int arr_size, int global_max_size);
 };
