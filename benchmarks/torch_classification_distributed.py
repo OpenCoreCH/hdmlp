@@ -20,8 +20,8 @@ Distributed TensorFlow Classification benchmark, based on:
 # Top level data directory. Here we assume the format of the directory conforms to the ImageFolder structure
 data_dir = "/Volumes/Daten/Daten/Datasets/hymenoptera_data"
 # HDMLP parameters
-#lib_path = "/Volumes/GoogleDrive/Meine Ablage/Dokumente/1 - Schule/1 - ETHZ/6. Semester/Bachelor Thesis/hdmlp/cpp/hdmlp/cmake-build-debug/libhdmlp.dylib"
-lib_path = None
+lib_path = "/Volumes/GoogleDrive/Meine Ablage/Dokumente/1 - Schule/1 - ETHZ/6. Semester/Bachelor Thesis/hdmlp/cpp/hdmlp/cmake-build-debug/libhdmlp.dylib"
+#lib_path = None
 config_path = "/Volumes/GoogleDrive/Meine Ablage/Dokumente/1 - Schule/1 - ETHZ/6. Semester/Bachelor Thesis/hdmlp/cpp/hdmlp/data/hdmlp.cfg"
 drop_last_batch = False
 seed = None
@@ -36,11 +36,12 @@ num_epochs = 2
 # Flag for feature extracting. When False, we finetune the whole model, when True we only update the reshaped layer params
 feature_extract = False
 # Which file loading framework to use
-backend = "hdmlp"
+backend = "torchvision"
+dataset = "folder" # imagenet or folder
 
-
-def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_inception=False):
+def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_inception=False, node_id = 0):
     since = time.time()
+    load_time = 0
 
     val_acc_history = []
 
@@ -48,8 +49,9 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
     best_acc = 0.0
 
     for epoch in range(num_epochs):
-        print('Epoch {}/{}'.format(epoch, num_epochs - 1))
-        print('-' * 10)
+        if node_id == 0:
+            print('Epoch {}/{}'.format(epoch + 1, num_epochs))
+            print('-' * 10)
 
         # Each epoch has a training and validation phase
         for phase in ['train', 'val']:
@@ -62,7 +64,9 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
             running_corrects = 0
 
             # Iterate over data.
+            bef_time = time.time()
             for inputs, labels in dataloaders[phase]:
+                load_time += time.time() - bef_time
                 inputs = inputs.to(device)
                 labels = labels.to(device)
 
@@ -96,11 +100,13 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
                 # statistics
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data)
+                bef_time = time.time()
 
             epoch_loss = running_loss / len(dataloaders[phase].dataset)
             epoch_acc = running_corrects.double() / len(dataloaders[phase].dataset)
 
-            print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, epoch_loss, epoch_acc))
+            if node_id == 0:
+                print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, epoch_loss, epoch_acc))
 
             # deep copy the model
             if phase == 'val' and epoch_acc > best_acc:
@@ -112,8 +118,11 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
         print()
 
     time_elapsed = time.time() - since
-    print('Training complete in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
-    print('Best val Acc: {:4f}'.format(best_acc))
+    load_time_avg = hvd.allreduce(torch.tensor(load_time))
+    if node_id == 0:
+        print('Training complete in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
+        print('Best val Acc: {:4f}'.format(best_acc))
+        print('Load time: {}'.format(load_time_avg.item()))
 
     # load best model weights
     model.load_state_dict(best_model_wts)
@@ -197,16 +206,9 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Tr
 
     return model_ft, input_size
 
-def average_gradients(model):
-    size = float(dist.get_world_size())
-    for param in model.parameters():
-        dist.all_reduce(param.grad.data, op=dist.reduce_op.SUM)
-        param.grad.data /= size
-
 if __name__ == "__main__":
     # Initialize the model for this run
     model_ft, input_size = initialize_model(model_name, num_classes, feature_extract, use_pretrained=False)
-    print(model_ft)
     # Data augmentation and normalization for training
     # Just normalization for validation
     data_transforms = {
@@ -224,7 +226,6 @@ if __name__ == "__main__":
         ]),
     }
 
-    print("Initializing Datasets and Dataloaders...")
     image_datasets = {}
     dataloaders_dict = {}
 
@@ -232,7 +233,10 @@ if __name__ == "__main__":
 
     if backend == "hdmlp":
         hdmlp_jobs = {x: hdmlp.Job(os.path.join(data_dir, x), batch_size, num_epochs, 'uniform', drop_last_batch, seed, config_path, lib_path) for x in ['train', 'val']}
-        image_datasets = {x: hdmlp.lib.torch.HDMLPImageFolder(os.path.join(data_dir, x), hdmlp_jobs[x], data_transforms[x]) for x in ['train', 'val']}
+        if dataset == "folder":
+            image_datasets = {x: hdmlp.lib.torch.HDMLPImageFolder(os.path.join(data_dir, x), hdmlp_jobs[x], data_transforms[x]) for x in ['train', 'val']}
+        elif dataset == "imagenet":
+            pass
         dataloaders_dict = {x: hdmlp.lib.torch.HDMLPDataLoader(image_datasets[x], batch_size, drop_last_batch, hdmlp_jobs[x].no_nodes(), hdmlp_jobs[x].node_id()) for x in ['train', 'val']}
         hvd.init()
     elif backend == "torchvision":
@@ -242,9 +246,17 @@ if __name__ == "__main__":
         dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size, num_workers=4, sampler=image_samplers[x]) for x in ['train', 'val']}
 
     num_nodes = hvd.size()
+    node_id = hvd.rank()
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    torch_device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    device = torch.device(torch_device)
     model_ft = model_ft.to(device)
+
+    if node_id == 0:
+        print("Backend: {}".format(backend))
+        print("Dataset: {}".format(dataset))
+        print("Dataset path: {}".format(data_dir))
+        print("Device: {}".format(torch_device))
 
     # Gather the parameters to be optimized/updated in this run. If we are
     #  finetuning we will be updating all parameters. However, if we are
@@ -252,17 +264,11 @@ if __name__ == "__main__":
     #  that we have just initialized, i.e. the parameters with requires_grad
     #  is True.
     params_to_update = model_ft.parameters()
-    print("Params to learn:")
     if feature_extract:
         params_to_update = []
         for name, param in model_ft.named_parameters():
-            if param.requires_grad == True:
+            if param.requires_grad:
                 params_to_update.append(param)
-                print("\t", name)
-    else:
-        for name, param in model_ft.named_parameters():
-            if param.requires_grad == True:
-                print("\t", name)
 
     # Observe that all parameters are being optimized
     optimizer_ft = optim.SGD(params_to_update, lr=num_nodes * 0.001, momentum=0.9)
@@ -272,5 +278,5 @@ if __name__ == "__main__":
     criterion = nn.CrossEntropyLoss()
     # Train and evaluate
     model_ft, hist = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs=num_epochs,
-                                 is_inception=(model_name == "inception"))
-    #hvd.shutdown()
+                                 is_inception=(model_name == "inception"), node_id=node_id)
+    hvd.shutdown()
