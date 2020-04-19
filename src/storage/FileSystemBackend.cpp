@@ -42,27 +42,35 @@ void FileSystemBackend::init_mappings() {
         throw std::runtime_error("Invalid path specified");
     }
     while ((entry = readdir(dp))) {
-        if (entry->d_name[0] != '.' && entry->d_type == DT_DIR) {
+        if (entry->d_name[0] != '.') {
             std::string dir_name = entry->d_name;
             struct dirent* subentry = nullptr;
             DIR* subp = nullptr;
 
             subp = opendir((path + dir_name).c_str());
+            if (subp == nullptr) {
+                // Not a directory
+                continue;
+            }
 
             while ((subentry = readdir(subp))) {
-                if (subentry->d_type == DT_REG) {
-                    struct FileInformation fi{};
-                    fi.label = entry->d_name;
-                    fi.file_name = subentry->d_name;
-                    std::string rel_path = fi.label + '/' + fi.file_name;
-                    std::string file_name = abs_path(&rel_path);
-                    int fd = open(file_name.c_str(), O_RDONLY);
-                    struct stat stbuf; // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
-                    fstat(fd, &stbuf);
-                    close(fd);
-                    fi.file_size = stbuf.st_size;
-                    file_information.push_back(fi);
+                std::string rel_path = entry->d_name;
+                rel_path += '/';
+                rel_path += subentry->d_name;
+                std::string file_name = abs_path(&rel_path);
+                int fd = open(file_name.c_str(), O_RDONLY);
+                struct stat stbuf; // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
+                fstat(fd, &stbuf);
+                close(fd);
+                if (!S_ISREG(stbuf.st_mode)) { // NOLINT(hicpp-signed-bitwise)
+                    // Not a regular file
+                    continue;
                 }
+                struct FileInformation fi{};
+                fi.label = entry->d_name;
+                fi.file_name = subentry->d_name;
+                fi.file_size = stbuf.st_size;
+                file_information.push_back(fi);
             }
 
             closedir(subp);
