@@ -166,14 +166,12 @@ int DistributedManager::generate_and_broadcast_seed() {
  * Sets storage class to the lowest available remote storage class, 0 if none available
  */
 int DistributedManager::get_remote_storage_class(int file_id) {
-    std::unique_lock<std::mutex> file_availability_lock(file_availability_mutex);
     if (file_availability.count(file_id) == 0) {
         return 0;
     }
     FileAvailability fa = file_availability[file_id];
     int remote_offset = fa.offset;
     int remote_storage_class = fa.storage_class;
-    file_availability_lock.unlock();
     /**
      * We use the following heuristic to decide that a file should be available at a remote node (note that wrong decisions
      * don't lead to an error, as the fetching logic will detect these cases, but it will hurt performance):
