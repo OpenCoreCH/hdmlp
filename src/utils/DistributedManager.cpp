@@ -4,9 +4,11 @@
 #include "../../include/utils/DistributedManager.h"
 
 DistributedManager::DistributedManager(MetadataStore* metadata_store, // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
-                                       StorageBackend* storage_backend) {
+                                       StorageBackend* storage_backend,
+                                       PrefetcherBackend** prefetcher_backends) {
     this->metadata_store = metadata_store;
     this->storage_backend = storage_backend;
+    pf_backends = prefetcher_backends;
     int initialized; // If multiple jobs run in parallel or MPI was already initialized by e.g. Horovod, initialize only once
     MPI_Initialized(&initialized);
     int provided;
@@ -29,10 +31,6 @@ DistributedManager::~DistributedManager() {
     if (has_initialized_mpi) {
         MPI_Finalize();
     }
-}
-
-void DistributedManager::set_prefetcher_backends(PrefetcherBackend** prefetcher_backends) {
-    pf_backends = prefetcher_backends;
 }
 
 int DistributedManager::get_no_nodes() {

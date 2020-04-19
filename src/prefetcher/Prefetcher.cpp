@@ -19,7 +19,7 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidel
     backend = new FileSystemBackend(dataset_path);
     metadata_store = new MetadataStore(networkbandwidth_clients, networkbandwidth_filesystem, &config_pfs_bandwidth, &config_bandwidths,
                                        &config_no_threads);
-    distr_manager = new DistributedManager(metadata_store, backend);
+    distr_manager = new DistributedManager(metadata_store, backend, pf_backends);
     n = distr_manager->get_no_nodes();
     metadata_store->set_no_nodes(n);
     node_id = distr_manager->get_node_id();
@@ -31,7 +31,6 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidel
     sampler->get_prefetch_string(node_id, &config_capacities, &prefetch_string, &storage_class_ends, true);
     distr_manager->distribute_prefetch_strings(&prefetch_string, &storage_class_ends, config_no_threads.size());
     init_threads();
-    distr_manager->set_prefetcher_backends(pf_backends);
     init_distr_threads();
 }
 
@@ -44,14 +43,14 @@ void Prefetcher::init_config(const std::wstring& path) {
     config.get_pfs_bandwidth(&config_pfs_bandwidth);
     no_distributed_threads = config.get_no_distributed_threads();
     config.get_bandwidths(&networkbandwidth_clients, &networkbandwidth_filesystem);
-}
-
-void Prefetcher::init_threads() {
     int classes = config_no_threads.size();
     pf_backends = new PrefetcherBackend* [classes - 1];
     for (int i = 0; i < classes - 1; i++) {
         pf_backends[i] = nullptr;
     }
+}
+
+void Prefetcher::init_threads() {
     threads.resize(storage_class_ends.size() + 1);
     for (int j = storage_class_ends.size(); j >= 0; j--) {
         int no_storage_class_threads = config_no_threads[j];
