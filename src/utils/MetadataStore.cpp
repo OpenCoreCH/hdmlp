@@ -1,5 +1,6 @@
 #include "../../include/utils/MetadataStore.h"
 #include <algorithm>
+#include <climits>
 
 
 MetadataStore::MetadataStore(int networkbandwidth_clients, // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
