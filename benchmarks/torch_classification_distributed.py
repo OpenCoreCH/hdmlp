@@ -258,7 +258,7 @@ if __name__ == "__main__":
             image_datasets = {x: hdmlp.lib.torch.HDMLPImageFolder(os.path.join(data_dir, x), hdmlp_jobs[x], data_transforms[x]) for x in ['train', 'val']}
         elif dataset == "imagenet":
             pass
-        dataloaders_dict = {x: hdmlp.lib.torch.HDMLPThreadedDataLoader(image_datasets[x], batch_size, drop_last_batch, hdmlp_jobs[x].no_nodes(), hdmlp_jobs[x].node_id(), num_epochs) for x in ['train', 'val']}
+        dataloaders_dict = {x: hdmlp.lib.torch.HDMLPThreadedDataLoader(image_datasets[x]) for x in ['train', 'val']}
         #dataloaders_dict = {x: hdmlp.lib.torch.HDMLPDataLoader(image_datasets[x], batch_size, drop_last_batch, hdmlp_jobs[x].no_nodes(), hdmlp_jobs[x].node_id()) for x in ['train', 'val']}
         hvd.init()
     elif backend == "torchvision":

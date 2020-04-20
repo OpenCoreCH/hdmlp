@@ -86,8 +86,17 @@ class Job:
     def length(self):
         return self.hdmlp_lib.length(self.job_id)
 
-    def node_id(self):
+    def get_node_id(self):
         return self.hdmlp_lib.get_node_id(self.job_id)
 
-    def no_nodes(self):
+    def get_no_nodes(self):
         return self.hdmlp_lib.get_no_nodes(self.job_id)
+
+    def get_batch_size(self):
+        return self.batch_size
+
+    def get_num_epochs(self):
+        return self.epochs
+
+    def get_drop_last_batch(self):
+        return self.drop_last_batch

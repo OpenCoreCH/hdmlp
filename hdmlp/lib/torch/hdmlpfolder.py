@@ -112,6 +112,9 @@ class HDMLPDatasetFolder(HDMLPVisionDataset):
     def __del__(self):
         self.job.destroy()
 
+    def get_job(self):
+        return self.job
+
 IMG_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tiff', '.webp')
 
 
