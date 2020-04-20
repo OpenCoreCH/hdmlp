@@ -10,34 +10,53 @@ import os
 import copy
 import hdmlp
 import hdmlp.lib.torch
+import argparse
 
 """
-Distributed TensorFlow Classification benchmark, based on:
+Distributed PyTorch Classification benchmark, based on:
  - https://pytorch.org/tutorials/beginner/finetuning_torchvision_models_tutorial.html
  - https://github.com/horovod/horovod/blob/master/docs/pytorch.rst
 """
+# Parse input arguments
+parser = argparse.ArgumentParser(description='Distributed PyTorch Benchmark Script')
+parser.add_argument('--backend', choices={"hdmlp", "torchvision"}, default="hdmlp")
+parser.add_argument('--epochs', type=int, default=10)
+parser.add_argument('--data-dir', type=str)
+parser.add_argument('--batch-size', type=int, default=64)
+parser.add_argument('--lib-path', type=str, default=None)
+parser.add_argument('--config-path', type=str, default=None)
+parser.add_argument('--drop-last-batch', type=bool, default=False)
+parser.add_argument('--seed', type=int, default=None)
+parser.add_argument('--model-name', choices={"resnet", "alexnet", "vgg", "squeezenet", "densenet", "inception"})
+parser.add_argument('--num-classes', type=int, default=2)
+parser.add_argument('--torch-num-workers', type=int, default=4)
+args = parser.parse_args()
+
 # --- Benchmark parameters ---
 # Top level data directory. Here we assume the format of the directory conforms to the ImageFolder structure
-data_dir = "/Volumes/Daten/Daten/Datasets/hymenoptera_data"
-# HDMLP parameters
-lib_path = "/Volumes/GoogleDrive/Meine Ablage/Dokumente/1 - Schule/1 - ETHZ/6. Semester/Bachelor Thesis/hdmlp/cpp/hdmlp/cmake-build-debug/libhdmlp.dylib"
-#lib_path = None
-config_path = "/Volumes/GoogleDrive/Meine Ablage/Dokumente/1 - Schule/1 - ETHZ/6. Semester/Bachelor Thesis/hdmlp/cpp/hdmlp/data/hdmlp.cfg"
-drop_last_batch = False
-seed = None
+data_dir = args.data_dir
+
 # Models to choose from [resnet, alexnet, vgg, squeezenet, densenet, inception]
-model_name = "squeezenet"
+model_name = args.model_name
 # Number of classes in the dataset
-num_classes = 2
+num_classes = args.num_classes
 # Batch size for training (change depending on how much memory you have)
-batch_size = 64
+batch_size = args.batch_size
 # Number of epochs to train for
-num_epochs = 2
+num_epochs = args.epochs
 # Flag for feature extracting. When False, we finetune the whole model, when True we only update the reshaped layer params
 feature_extract = False
 # Which file loading framework to use
-backend = "torchvision"
+backend = args.backend
 dataset = "folder" # imagenet or folder
+
+# PyTorch parameters
+torch_num_workers = args.torch_num_workers
+# HDMLP parameters
+lib_path = args.lib_path
+config_path = args.config_path
+drop_last_batch = args.drop_last_batch
+seed = args.seed
 
 def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_inception=False, node_id = 0):
     since = time.time()
@@ -64,11 +83,13 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
             running_corrects = 0
 
             # Iterate over data.
+            iter_items = 0
             bef_time = time.time()
             for inputs, labels in dataloaders[phase]:
                 load_time += time.time() - bef_time
                 inputs = inputs.to(device)
                 labels = labels.to(device)
+                iter_items += len(labels)
 
                 # zero the parameter gradients
                 optimizer.zero_grad()
@@ -102,8 +123,8 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
                 running_corrects += torch.sum(preds == labels.data)
                 bef_time = time.time()
 
-            epoch_loss = running_loss / len(dataloaders[phase].dataset)
-            epoch_acc = running_corrects.double() / len(dataloaders[phase].dataset)
+            epoch_loss = running_loss / iter_items
+            epoch_acc = running_corrects.double() / iter_items
 
             if node_id == 0:
                 print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, epoch_loss, epoch_acc))
@@ -237,13 +258,14 @@ if __name__ == "__main__":
             image_datasets = {x: hdmlp.lib.torch.HDMLPImageFolder(os.path.join(data_dir, x), hdmlp_jobs[x], data_transforms[x]) for x in ['train', 'val']}
         elif dataset == "imagenet":
             pass
-        dataloaders_dict = {x: hdmlp.lib.torch.HDMLPDataLoader(image_datasets[x], batch_size, drop_last_batch, hdmlp_jobs[x].no_nodes(), hdmlp_jobs[x].node_id()) for x in ['train', 'val']}
+        dataloaders_dict = {x: hdmlp.lib.torch.HDMLPThreadedDataLoader(image_datasets[x], batch_size, drop_last_batch, hdmlp_jobs[x].no_nodes(), hdmlp_jobs[x].node_id(), num_epochs) for x in ['train', 'val']}
+        #dataloaders_dict = {x: hdmlp.lib.torch.HDMLPDataLoader(image_datasets[x], batch_size, drop_last_batch, hdmlp_jobs[x].no_nodes(), hdmlp_jobs[x].node_id()) for x in ['train', 'val']}
         hvd.init()
     elif backend == "torchvision":
         hvd.init()
         image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms[x]) for x in ['train', 'val']}
         image_samplers = {x: torch.utils.data.distributed.DistributedSampler(image_datasets[x], num_replicas=hvd.size(), rank=hvd.rank()) for x in ['train', 'val']}
-        dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size, num_workers=4, sampler=image_samplers[x]) for x in ['train', 'val']}
+        dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size, num_workers=torch_num_workers, sampler=image_samplers[x]) for x in ['train', 'val']}
 
     num_nodes = hvd.size()
     node_id = hvd.rank()
@@ -279,4 +301,3 @@ if __name__ == "__main__":
     # Train and evaluate
     model_ft, hist = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs=num_epochs,
                                  is_inception=(model_name == "inception"), node_id=node_id)
-    hvd.shutdown()
