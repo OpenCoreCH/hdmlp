@@ -22,7 +22,7 @@ parser = argparse.ArgumentParser(description='Distributed PyTorch Benchmark Scri
 parser.add_argument('--backend', choices={"hdmlp", "torchvision"}, default="hdmlp")
 parser.add_argument('--epochs', type=int, default=10)
 parser.add_argument('--data-dir', type=str)
-parser.add_argument('--batch-size', type=int, default=64)
+parser.add_argument('--batch-size', type=int, default=32)
 parser.add_argument('--lib-path', type=str, default=None)
 parser.add_argument('--config-path', type=str, default=None)
 parser.add_argument('--drop-last-batch', type=bool, default=False)
@@ -265,7 +265,7 @@ if __name__ == "__main__":
         hvd.init()
         image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms[x]) for x in ['train', 'val']}
         image_samplers = {x: torch.utils.data.distributed.DistributedSampler(image_datasets[x], num_replicas=hvd.size(), rank=hvd.rank()) for x in ['train', 'val']}
-        dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size, num_workers=torch_num_workers, sampler=image_samplers[x]) for x in ['train', 'val']}
+        dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size / hvd.size(), num_workers=torch_num_workers, sampler=image_samplers[x]) for x in ['train', 'val']}
 
     num_nodes = hvd.size()
     node_id = hvd.rank()
