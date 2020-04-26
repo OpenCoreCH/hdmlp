@@ -24,7 +24,6 @@ FileSystemPrefetcher::FileSystemPrefetcher(std::map<std::string, std::string>& b
     }
 
     path = path + std::to_string(job_id) + "_" + std::to_string(node_id);
-    std::cout << "PATH = " << path << std::endl;
 
     if ((fd = open(path.c_str(), O_RDWR | O_CREAT | O_TRUNC, (mode_t) 0600)) < 0) { // NOLINT(hicpp-signed-bitwise)
         throw std::runtime_error("Error opening file for prefetching");

@@ -42,7 +42,6 @@ int DistributedManager::get_node_id() {
 }
 
 void DistributedManager::serve() {
-    std::cout << "In serve..." << std::endl;
     while (true) {
         int req[2];
         MPI_Status status;
@@ -112,13 +111,6 @@ void DistributedManager::distribute_prefetch_strings(std::vector<int>* local_pre
     MPI_Allgather(&send_data, 1, arr_type, rcv_data, 1, arr_type, JOB_COMM);
     MPI_Type_free(&arr_type);
     parse_received_prefetch_data(rcv_data, arr_size, global_max_size);
-    std::cout << "FILE AVAIL SIZE " << file_availability.size() << std::endl;
-    /*std::this_thread::sleep_for(std::chrono::milliseconds(node_id * 1000));
-    for (auto elem : file_availability) {
-        std::cout << "File id " << elem.first << " available at node " << elem.second.node_id << " (offset " <<
-        elem.second.offset << ") in storage class " << elem.second.storage_class << std::endl;
-    }*/
-
 }
 
 void DistributedManager::parse_received_prefetch_data(int* rcv_data, int arr_size, int global_max_size) {

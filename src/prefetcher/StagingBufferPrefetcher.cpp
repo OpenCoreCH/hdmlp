@@ -34,7 +34,6 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
         while (true) {
             std::unique_lock<std::mutex> crit_section_lock(prefetcher_mutex);
             while (waiting_for_consumption) {
-                //std::cout << thread_id << ": Waiting for consumption " << std::endl;
                 consumption_waiting_cond_var.wait(crit_section_lock);
             }
             int j = prefetch_offset;
@@ -57,7 +56,6 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
             while (staging_buffer_pointer < read_offset && staging_buffer_pointer + entry_size >= read_offset) {
                 // Prevent overwriting of non-read data
                 waiting_for_consumption = true;
-                //std::cout << thread_id << ": Waiting for Read offset (1) " << std::endl;
                 read_offset_cond_var.wait(crit_section_lock);
             }
 
@@ -67,8 +65,6 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
                 waiting_for_consumption = true;
                 // Ensure that overwriting is not possible after reset of pointer
                 while (entry_size >= read_offset) {
-                    std::cout << thread_id << ": Waiting for Read offset (2), entry size: " << entry_size << ", read_offset: " << read_offset
-                              << std::endl;
                     read_offset_cond_var.wait(crit_section_lock);
                 }
             }
@@ -125,7 +121,6 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
             }
             batch_advancement_cond_var.notify_all();
         } else {
-            //std::cout << thread_id << ": Waiting for batch advancement " << std::endl;
             batch_advancement_cond_var.wait(crit_section_lock);
         }
 
