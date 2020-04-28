@@ -27,12 +27,14 @@ class HDMLPImageNet(HDMLPImageFolder):
         targets (list): The class_index value for each image in the dataset
     """
 
-    def __init__(self, root, hdmlp_job: hdmlp.Job, transform = None, target_transform = None, split='train'):
+    def __init__(self, root, hdmlp_job: hdmlp.Job, transform = None, target_transform = None, split='train', devkit_root = None):
         root = self.root = os.path.expanduser(root)
         self.split = split
 
-        parse_devkit_archive(root)
-        wnid_to_classes = load_meta_file(self.root)[0]
+        if devkit_root is None:
+            devkit_root = root
+        parse_devkit_archive(devkit_root)
+        wnid_to_classes = load_meta_file(devkit_root)[0]
 
         super(HDMLPImageNet, self).__init__(self.split_folder, hdmlp_job, transform, target_transform)
         print("Init finished")
