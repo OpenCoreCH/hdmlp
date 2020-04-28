@@ -30,6 +30,8 @@ parser.add_argument('--seed', type=int, default=None)
 parser.add_argument('--model-name', choices={"resnet", "alexnet", "vgg", "squeezenet", "densenet", "inception"})
 parser.add_argument('--num-classes', type=int, default=2)
 parser.add_argument('--torch-num-workers', type=int, default=4)
+parser.add_argument('--dataset', choices={"folder", "imagenet"}, default="folder")
+parser.add_argument('--imagenet-devkit-root', type=str, default=None)
 args = parser.parse_args()
 
 # --- Benchmark parameters ---
@@ -48,7 +50,8 @@ num_epochs = args.epochs
 feature_extract = False
 # Which file loading framework to use
 backend = args.backend
-dataset = "folder" # imagenet or folder
+dataset = args.dataset
+imagenet_devkit_root = args.imagenet_devkit_root
 
 # PyTorch parameters
 torch_num_workers = args.torch_num_workers
@@ -257,15 +260,18 @@ if __name__ == "__main__":
         if dataset == "folder":
             image_datasets = {x: hdmlp.lib.torch.HDMLPImageFolder(os.path.join(data_dir, x), hdmlp_jobs[x], data_transforms[x]) for x in ['train', 'val']}
         elif dataset == "imagenet":
-            pass
+            image_datasets = {x: hdmlp.lib.torch.HDMLPImageNet(data_dir, hdmlp_jobs[x], data_transforms[x], split=x, devkit_root=imagenet_devkit_root) for x in
+                              ['train', 'val']}
         dataloaders_dict = {x: hdmlp.lib.torch.HDMLPThreadedDataLoader(image_datasets[x]) for x in ['train', 'val']}
-        #dataloaders_dict = {x: hdmlp.lib.torch.HDMLPDataLoader(image_datasets[x], batch_size, drop_last_batch, hdmlp_jobs[x].no_nodes(), hdmlp_jobs[x].node_id()) for x in ['train', 'val']}
         hvd.init()
     elif backend == "torchvision":
         hvd.init()
-        image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms[x]) for x in ['train', 'val']}
+        if dataset == "folder":
+            image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms[x]) for x in ['train', 'val']}
+        elif dataset == "imagenet":
+            image_datasets = {x: datasets.ImageNet(os.path.join(data_dir, x), split=x, transform=data_transforms[x]) for x in ['train', 'val']}
         image_samplers = {x: torch.utils.data.distributed.DistributedSampler(image_datasets[x], num_replicas=hvd.size(), rank=hvd.rank()) for x in ['train', 'val']}
-        dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size / hvd.size(), num_workers=torch_num_workers, sampler=image_samplers[x]) for x in ['train', 'val']}
+        dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=int(batch_size / hvd.size()), num_workers=torch_num_workers, sampler=image_samplers[x]) for x in ['train', 'val']}
 
     num_nodes = hvd.size()
     node_id = hvd.rank()
