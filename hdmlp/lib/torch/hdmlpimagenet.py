@@ -20,7 +20,6 @@ class HDMLPImageNet(HDMLPImageFolder):
 
      Attributes:
         classes (list): List of the class name tuples.
-        class_to_idx (dict): Dict with items (class_name, class_index).
         wnids (list): List of the WordNet IDs.
         wnid_to_idx (dict): Dict with items (wordnet_id, class_index).
         imgs (list): List of (image path, class_index) tuples
@@ -43,9 +42,6 @@ class HDMLPImageNet(HDMLPImageFolder):
         self.wnids = self.classes
         self.wnid_to_idx = self.class_to_idx
         self.classes = [wnid_to_classes[wnid] for wnid in self.wnids]
-        """self.class_to_idx = {cls: idx
-                             for idx, clss in enumerate(self.classes)
-                             for cls in clss}"""
 
     @property
     def split_folder(self):
