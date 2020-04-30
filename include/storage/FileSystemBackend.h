@@ -8,8 +8,6 @@ class FileSystemBackend : public StorageBackend {
 public:
     explicit FileSystemBackend(const std::wstring& path);
 
-    std::unordered_map<int, std::string> get_id_mapping() override;
-
     std::string get_label(int file_id) override;
 
     int get_length() override;
