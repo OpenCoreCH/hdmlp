@@ -2,7 +2,7 @@
 
 ## Installation
 Using setuptools:
-- Clone this repo and the submodules using ```git clone --recurse-submodules```
+- Clone this repo and the submodules using ```git clone```
 - Run ```python setup.py install```
 
 ## Requirements
