@@ -101,7 +101,7 @@ void DistributedManager::distribute_prefetch_strings(std::vector<int>* local_pre
     auto prev_end = local_prefetch_string->begin();
     // Store number of elements per storage class in send_data
     send_data[global_max_size] = storage_class_ends->size();
-    for (int i = 0; i < storage_class_ends->size(); i++) {
+    for (unsigned long i = 0; i < storage_class_ends->size(); i++) {
         send_data[global_max_size + i + 1] = std::distance(prev_end, (*storage_class_ends)[i]);
         prev_end = (*storage_class_ends)[i];
     }
@@ -122,7 +122,7 @@ void DistributedManager::parse_received_prefetch_data(int* rcv_data, int arr_siz
             for (int j = offset + global_max_size + 1; j < offset + global_max_size + 1 + used_storage_classes; j++) {
                 elems_per_storage_class.push_back(rcv_data[j]);
             }
-            for (int j = 0; j < elems_per_storage_class.size(); j++) {
+            for (unsigned long j = 0; j < elems_per_storage_class.size(); j++) {
                 int storage_class_elems = elems_per_storage_class[j];
                 for (int k = offset; k < offset + storage_class_elems; k++) {
                     int file_id = rcv_data[k];

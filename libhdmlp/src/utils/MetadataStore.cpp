@@ -9,7 +9,7 @@ MetadataStore::MetadataStore(int networkbandwidth_clients, // NOLINT(cppcoreguid
                              std::vector<std::map<int, int>>* storage_level_bandwidths,
                              std::vector<int>* no_threads) {
     interp_pfs_bandwidth = interpolate_map(n, pfs_bandwidths);
-    for (int i = 0; i < no_threads->size(); i++) {
+    for (int unsigned long i = 0; i < no_threads->size(); i++) {
         int threads = (*no_threads)[i];
         std::map<int, int>* storage_level_bandwidth = &(*storage_level_bandwidths)[i];
         interp_storage_level_bandwidths.push_back(interpolate_map(threads, storage_level_bandwidth) / threads);

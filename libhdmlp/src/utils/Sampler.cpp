@@ -111,7 +111,7 @@ void Sampler::get_prefetch_string(int node_id, const std::vector<unsigned long l
         prefetch_string->emplace_back(pair.first);
         curr_size += size;
     }
-    if (storage_class_ends->size() < num_storage_classes - 1) {
+    if ((int) storage_class_ends->size() < num_storage_classes - 1) {
         storage_class_ends->push_back(prefetch_string->end());
     }
     if (in_order) {

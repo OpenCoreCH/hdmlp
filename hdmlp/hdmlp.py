@@ -1,7 +1,8 @@
 import ctypes
 import pathlib
 from sys import platform
-from typing import Optional
+from typing import Optional, List
+from .lib.transforms import transforms
 
 
 class Job:
@@ -14,6 +15,7 @@ class Job:
                  epochs: int,
                  distr_scheme: str,
                  drop_last_batch: bool,
+                 transforms: Optional[List[transforms.Transform]] = None,
                  seed: Optional[int] = None,
                  config_path: Optional[str] = None,
                  libhdmlp_path: Optional[str] = None):
@@ -29,6 +31,11 @@ class Job:
             raise ValueError("Distribution scheme {} not supported".format(distr_scheme))
         self.distr_scheme = self.DISTR_SCHEMES[distr_scheme]
         self.drop_last_batch = drop_last_batch
+        self.transforms = transforms
+        self.transformed_size = 0
+        self.trans_w, self.trans_h = None, None
+        if transforms is not None:
+            self._get_transformed_size()
         self.seed = seed
         self.buffer_p = None
         self.buffer_offset = 0
@@ -56,14 +63,46 @@ class Job:
             raise EnvironmentError("Couldn't find configuration at location {}".format(path))
         return str(path)
 
+    def _get_transformed_size(self):
+        w, h = self.get_transformed_dims()
+        out_size = self.transforms[-1].get_output_size(w, h)
+        if out_size == transforms.Transform.UNKNOWN_SIZE:
+            raise ValueError("Can't determine the output size after applying the transformations")
+        self.transformed_size = out_size
+
+    def get_transformed_dims(self):
+        if self.trans_w is None or self.trans_h is None:
+            w, h = transforms.Transform.UNKNOWN_DIMENSION, transforms.Transform.UNKNOWN_DIMENSION
+            for transform in self.transforms:
+                w, h = transform.get_output_dimensions(w, h)
+            self.trans_w, self.trans_h = w, h
+        return self.trans_w, self.trans_h
+
     def setup(self):
+        cpp_transform_names = [transform.__class__.__name__ for transform in self.transforms]
+        cpp_transform_names_arr = (ctypes.c_wchar_p * len(cpp_transform_names))()
+        cpp_transform_names_arr[:] = cpp_transform_names
+        transform_arg_size = sum(sum(ctypes.sizeof(arg) for arg in transform.arg_types) for transform in self.transforms)
+        transform_args_arr = (ctypes.c_byte * transform_arg_size)()
+        transform_args_arr_p = ctypes.cast(ctypes.pointer(transform_args_arr), ctypes.c_void_p)
+        for transform in self.transforms:
+            arg_types = transform.arg_types
+            args = transform.get_args()
+            for type, arg in zip(arg_types, args):
+                p = ctypes.cast(transform_args_arr_p, ctypes.POINTER(type))
+                p[0] = arg
+                transform_args_arr_p.value += ctypes.sizeof(type)
         job_id = self.hdmlp_lib.setup(ctypes.c_wchar_p(self.dataset_path),
                                       ctypes.c_wchar_p(self.config_path),
                                       self.batch_size,
                                       self.epochs,
                                       self.distr_scheme,
                                       ctypes.c_bool(self.drop_last_batch),
-                                      self.seed)
+                                      self.seed,
+                                      cpp_transform_names_arr,
+                                      transform_args_arr,
+                                      self.transformed_size,
+                                      len(cpp_transform_names))
         buffer = self.hdmlp_lib.get_staging_buffer(job_id)
         self.job_id = job_id
         self.buffer_p = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_char))
@@ -100,3 +139,6 @@ class Job:
 
     def get_drop_last_batch(self):
         return self.drop_last_batch
+
+    def get_transforms(self):
+        return self.transforms

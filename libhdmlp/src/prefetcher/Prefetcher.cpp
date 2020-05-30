@@ -1,5 +1,6 @@
 #include <codecvt>
 #include <locale>
+#include <iostream>
 #include "../../include/prefetcher/Prefetcher.h"
 #include "../../include/storage/FileSystemBackend.h"
 #include "../../include/utils/Configuration.h"
@@ -14,7 +15,11 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidel
                        int distr_scheme,
                        bool drop_last_batch,
                        int seed,
-                       int job_id) {
+                       int job_id,
+                       wchar_t** transform_names,
+                       char* transform_args,
+                       int transform_output_size,
+                       int transform_len) {
     init_config(config_path);
     backend = new FileSystemBackend(dataset_path);
     metadata_store = new MetadataStore(networkbandwidth_clients, networkbandwidth_filesystem, &config_pfs_bandwidth, &config_bandwidths,
@@ -30,6 +35,9 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidel
     sampler = new Sampler(backend, n, batch_size, epochs, distr_scheme, drop_last_batch, seed);
     sampler->get_prefetch_string(node_id, &config_capacities, &prefetch_string, &storage_class_ends, true);
     distr_manager->distribute_prefetch_strings(&prefetch_string, &storage_class_ends, config_no_threads.size());
+    if (transform_len > 0) {
+        transform_pipeline = new TransformPipeline(transform_names, transform_args, transform_output_size, transform_len);
+    }
     init_threads();
     init_distr_threads();
 }
@@ -60,6 +68,10 @@ void Prefetcher::init_threads() {
                 if (k == 0) {
                     unsigned long long int staging_buffer_capacity = config_capacities[0];
                     staging_buffer = new char[staging_buffer_capacity];
+                    int transform_output_size = 0;
+                    if (transform_pipeline != nullptr) {
+                        transform_output_size = transform_pipeline->get_output_size();
+                    }
                     sbf = new StagingBufferPrefetcher(staging_buffer,
                                                       staging_buffer_capacity,
                                                       node_id,
@@ -68,7 +80,9 @@ void Prefetcher::init_threads() {
                                                       backend,
                                                       pf_backends,
                                                       metadata_store,
-                                                      distr_manager);
+                                                      distr_manager,
+                                                      transform_pipeline,
+                                                      transform_output_size);
                 }
                 std::thread thread(&StagingBufferPrefetcher::prefetch, std::ref(*sbf), k);
                 storage_class_threads.push_back(std::move(thread));
@@ -145,6 +159,7 @@ Prefetcher::~Prefetcher() {
     delete distr_manager;
     delete sbf;
     delete[] staging_buffer;
+    delete transform_pipeline;
 }
 
 int Prefetcher::get_node_id() {

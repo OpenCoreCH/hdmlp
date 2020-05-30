@@ -1,3 +1,4 @@
+#include <iostream>
 #include "../../include/storage/FileSystemBackend.h"
 #include "../../include/prefetcher/Prefetcher.h"
 #include "../../include/utils/hdmlp_api.h"
@@ -9,7 +10,12 @@ int setup(wchar_t* dataset_path,
           int epochs,
           int distr_scheme,
           bool drop_last_batch,
-          int seed) {
+          int seed,
+          wchar_t** transform_names,
+          char* transform_args,
+          int transform_output_size,
+          int transform_len) {
+    printf("HDMLP API %p\n", (void *)transform_args);
     int job_id = 0;
     while (job_id < PARALLEL_JOBS_LIMIT) {
         if (!used_map[job_id]) {
@@ -29,7 +35,11 @@ int setup(wchar_t* dataset_path,
                                 distr_scheme,
                                 drop_last_batch,
                                 seed,
-                                job_id);
+                                job_id,
+                                transform_names,
+                                transform_args,
+                                transform_output_size,
+                                transform_len);
     return job_id;
 }
 

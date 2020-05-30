@@ -7,7 +7,8 @@ StagingBufferPrefetcher::StagingBufferPrefetcher(char* staging_buffer, unsigned 
                                                  int no_threads,
                                                  Sampler* sampler, StorageBackend* backend,
                                                  PrefetcherBackend** pf_backends,
-                                                 MetadataStore* metadata_store, DistributedManager* distr_manager) {
+                                                 MetadataStore* metadata_store, DistributedManager* distr_manager, TransformPipeline* transform_pipeline,
+                                                 int transform_output_size) {
     this->buffer_size = buffer_size;
     this->staging_buffer = staging_buffer;
     this->node_id = node_id;
@@ -17,12 +18,33 @@ StagingBufferPrefetcher::StagingBufferPrefetcher(char* staging_buffer, unsigned 
     this->pf_backends = pf_backends;
     this->metadata_store = metadata_store;
     this->distr_manager = distr_manager;
+    this->transform_pipeline = transform_pipeline;
+    if (transform_pipeline != nullptr) {
+        unsigned long max_file_size = 0;
+        for (int i = 0; i < backend->get_length(); i++) {
+            unsigned long size = backend->get_file_size(i);
+            if (size > max_file_size) {
+                max_file_size = size;
+            }
+        }
+        transform_buffers = new char*[no_threads];
+        for (int i = 0; i < no_threads; i++) {
+            transform_buffers[i] = new char[max_file_size];
+        }
+        this->transform_output_size = transform_output_size;
+    }
     global_batch_done = new bool[no_threads]();
 }
 
 StagingBufferPrefetcher::~StagingBufferPrefetcher() {
     delete sampler;
     delete[] global_batch_done;
+    if (transform_pipeline != nullptr) {
+        for (int i = 0; i < no_threads; i++) {
+            delete[] transform_buffers[i];
+        }
+        delete[] transform_buffers;
+    }
 }
 
 void StagingBufferPrefetcher::prefetch(int thread_id) {
@@ -53,6 +75,9 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
             unsigned long file_size = backend->get_file_size(file_id);
             std::string label = backend->get_label(file_id);
             unsigned long entry_size = file_size + label.size() + 1;
+            if (transform_pipeline != nullptr) {
+                entry_size = transform_output_size + label.size() + 1;
+            }
             while (staging_buffer_pointer < read_offset && staging_buffer_pointer + entry_size >= read_offset) {
                 // Prevent overwriting of non-read data
                 waiting_for_consumption = true;
@@ -78,7 +103,13 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
 
 
             strcpy(staging_buffer + local_staging_buffer_pointer, label.c_str());
-            fetch(file_id, staging_buffer + local_staging_buffer_pointer + label.size() + 1, thread_id);
+            if (transform_pipeline == nullptr) {
+                fetch(file_id, staging_buffer + local_staging_buffer_pointer + label.size() + 1, thread_id);
+            } else {
+
+                fetch(file_id, transform_buffers[thread_id], thread_id);
+                transform_pipeline->transform(transform_buffers[thread_id], file_size, staging_buffer + local_staging_buffer_pointer + label.size() + 1);
+            }
             std::unique_lock<std::mutex> staging_buffer_lock(staging_buffer_mutex);
             // Check if all the previous file ends were inserted to the queue. If not, don't insert, but only set
             // curr_iter_file_ends / curr_iter_file_ends_ready s.t. another thread will insert it

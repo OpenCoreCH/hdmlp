@@ -12,7 +12,11 @@ int setup(wchar_t* dataset_path,
           int epochs,
           int distr_scheme,
           bool drop_last_batch,
-          int seed);
+          int seed,
+          wchar_t** transform_names,
+          char* transform_args,
+          int transform_output_size,
+          int transform_len);
 
 char* get_staging_buffer(int job_id);
 

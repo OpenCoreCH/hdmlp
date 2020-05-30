@@ -20,7 +20,11 @@ public:
                int distr_scheme,
                bool drop_last_batch,
                int seed,
-               int job_id);
+               int job_id,
+               wchar_t** transform_names,
+               char* transform_args,
+               int transform_output_size,
+               int transform_len);
 
     ~Prefetcher();
 
@@ -44,6 +48,7 @@ private:
     PrefetcherBackend** pf_backends;
     MetadataStore* metadata_store;
     DistributedManager* distr_manager;
+    TransformPipeline* transform_pipeline = nullptr;
     std::vector<int> prefetch_string;
     std::vector<std::vector<int>::iterator> storage_class_ends;
     std::vector<unsigned long long int> config_capacities;

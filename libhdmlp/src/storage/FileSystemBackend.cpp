@@ -80,7 +80,7 @@ void FileSystemBackend::init_mappings() {
                   return a.label + a.file_name > b.label + b.file_name;
               }
     );
-    for (int i = 0; i < file_information.size(); i++) {
+    for (int unsigned long i = 0; i < file_information.size(); i++) {
         FileInformation fi = file_information[i];
         id_mappings[i] = fi.file_name;
         label_mappings[i] = fi.label;

@@ -6,13 +6,15 @@
 #include "PrefetcherBackend.h"
 #include "../utils/MetadataStore.h"
 #include "../utils/DistributedManager.h"
+#include "../transform/TransformPipeline.h"
 
 
 class StagingBufferPrefetcher {
 public:
     StagingBufferPrefetcher(char* staging_buffer, unsigned long long int buffer_size, int node_id, int no_threads,
                             Sampler* sampler, StorageBackend* backend, PrefetcherBackend** pf_backends,
-                            MetadataStore* metadata_store, DistributedManager* distr_manager);
+                            MetadataStore* metadata_store, DistributedManager* distr_manager, TransformPipeline* transform_pipeline,
+                            int transform_output_size);
 
     ~StagingBufferPrefetcher();
 
@@ -43,10 +45,13 @@ private:
     PrefetcherBackend** pf_backends;
     MetadataStore* metadata_store;
     DistributedManager* distr_manager;
+    TransformPipeline* transform_pipeline;
     int node_id;
     int no_threads;
     bool* global_batch_done;
     bool waiting_for_consumption = false;
+    char** transform_buffers;
+    int transform_output_size;
 
     void fetch(int file_id, char* dst, int thread_id);
 };

@@ -1,7 +1,13 @@
+import ctypes
+
+import torch
+
 from .hdmlpvision import HDMLPVisionDataset
 from hdmlp import hdmlp
+import hdmlp.lib.transforms
 
 from PIL import Image
+from torchvision import transforms
 
 import os
 import os.path
@@ -148,14 +154,20 @@ class HDMLPImageFolder(HDMLPDatasetFolder):
     """
 
     def __init__(self, root, hdmlp_job: hdmlp.Job, transform=None, target_transform=None):
+        hdmlp_transforms = hdmlp_job.get_transforms()
+        self.img_decode = not any(isinstance(hdmlp_transform, hdmlp.lib.transforms.ImgDecode) for hdmlp_transform in hdmlp_transforms)
         super(HDMLPImageFolder, self).__init__(root, hdmlp_job,
                                                transform=transform,
                                                target_transform=target_transform)
 
 
     def __getitem__(self, item):
-        folder_label, raw_sample = self.job.get()
-        sample = pil_decode(raw_sample)
+        folder_label, sample = self.job.get()
+        if self.img_decode:
+            sample = pil_decode(sample)
+        else:
+            w_out, h_out = self.job.get_transformed_dims()
+            sample = torch.FloatTensor(torch.FloatStorage.from_buffer(sample, byte_order='native')).reshape(3, w_out, h_out)
         target = self.class_to_idx[folder_label]
         if self.transform is not None:
             sample = self.transform(sample)
