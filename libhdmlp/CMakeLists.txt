@@ -12,6 +12,6 @@ find_package(Torch REQUIRED)
 include_directories(SYSTEM ${MPI_INCLUDE_PATH} ${OpenCV_INCLUDE_DIRS})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
-add_library(hdmlp SHARED src/utils/hdmlp_api.cpp src/storage/FileSystemBackend.cpp src/prefetcher/Prefetcher.cpp src/utils/Sampler.cpp src/utils/Configuration.cpp src/prefetcher/StagingBufferPrefetcher.cpp src/prefetcher/PrefetcherBackendFactory.cpp src/prefetcher/MemoryPrefetcher.cpp src/prefetcher/FileSystemPrefetcher.cpp src/utils/MetadataStore.cpp src/utils/DistributedManager.cpp src/transform/TransformPipeline.cpp src/transform/Transformation.cpp src/transform/ImgDecode.cpp src/transform/Resize.cpp src/transform/ToTensor.cpp)
+add_library(hdmlp SHARED src/utils/hdmlp_api.cpp src/storage/FileSystemBackend.cpp src/prefetcher/Prefetcher.cpp src/utils/Sampler.cpp src/utils/Configuration.cpp src/prefetcher/StagingBufferPrefetcher.cpp src/prefetcher/PrefetcherBackendFactory.cpp src/prefetcher/MemoryPrefetcher.cpp src/prefetcher/FileSystemPrefetcher.cpp src/utils/MetadataStore.cpp src/utils/DistributedManager.cpp src/transform/TransformPipeline.cpp src/transform/Transformation.cpp src/transform/ImgDecode.cpp src/transform/Resize.cpp src/transform/ToTensor.cpp src/transform/RandomHorizontalFlip.cpp include/transform/RandomHorizontalFlip.h src/transform/RandomVerticalFlip.cpp include/transform/RandomVerticalFlip.h)
 
 target_link_libraries(hdmlp ${libconfig} ${MPI_C_LIBRARIES} ${OpenCV_LIBS} ${TORCH_LIBRARIES})

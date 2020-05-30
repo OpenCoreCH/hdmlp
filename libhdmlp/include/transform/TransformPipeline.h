@@ -13,7 +13,7 @@ public:
 
     void transform(char* src_buffer, unsigned long src_len, char* dst_buffer);
 
-    int get_output_size();
+    int get_output_size() const;
 
 private:
     int output_size;

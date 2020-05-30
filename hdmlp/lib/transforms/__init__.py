@@ -1,1 +1,1 @@
-from .transforms import ImgDecode, Crop, ToTensor, Normalize, Resize
+from .transforms import ImgDecode, Crop, ToTensor, Normalize, Resize, RandomHorizontalFlip, RandomVerticalFlip

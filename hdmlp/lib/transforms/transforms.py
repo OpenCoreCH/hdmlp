@@ -66,6 +66,31 @@ class Resize(CVImageManipulation):
     def get_args(self):
         return [self.w, self.h]
 
+class RandomHorizontalFlip(CVImageManipulation):
+    arg_types = [ctypes.c_float]
+
+    def __init__(self, p = 0.5):
+        self.p = p
+
+    def get_output_dimensions(self, w_in, h_in):
+        return (w_in, h_in)
+
+    def get_args(self):
+        return [self.p]
+
+
+class RandomVerticalFlip(CVImageManipulation):
+    arg_types = [ctypes.c_float]
+
+    def __init__(self, p=0.5):
+        self.p = p
+
+    def get_output_dimensions(self, w_in, h_in):
+        return (w_in, h_in)
+
+    def get_args(self):
+        return [self.p]
+
 class ToTensor(Transform):
 
     def __init__(self):
