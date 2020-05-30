@@ -40,19 +40,6 @@ class CVImageManipulation(Transform):
         (dim_x, dim_y) = self.get_output_dimensions(w_in, h_in)
         return dim_x * dim_y * 3
 
-class Crop(CVImageManipulation):
-    arg_types = [ctypes.c_int, ctypes.c_int]
-
-    def __init__(self, w_out, h_out):
-        self.w = w_out
-        self.h = h_out
-
-    def get_output_dimensions(self, w_in, h_in):
-        return (self.w, self.h)
-
-    def get_args(self):
-        return [self.w, self.h]
-
 class Resize(CVImageManipulation):
     arg_types = [ctypes.c_int, ctypes.c_int]
 
@@ -90,6 +77,21 @@ class RandomVerticalFlip(CVImageManipulation):
 
     def get_args(self):
         return [self.p]
+
+
+class RandomResizedCrop(CVImageManipulation):
+    arg_types = [ctypes.c_int, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+
+    def __init__(self, size, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.)):
+        self.size = size
+        self.scale = scale
+        self.ratio = ratio
+
+    def get_output_dimensions(self, w_in, h_in):
+        return (self.size, self.size)
+
+    def get_args(self):
+        return [self.size, self.scale[0], self.scale[1], self.ratio[0], self.ratio[1]]
 
 class ToTensor(Transform):
 

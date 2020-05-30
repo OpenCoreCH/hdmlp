@@ -6,6 +6,7 @@
 #include "../../include/transform/ToTensor.h"
 #include "../../include/transform/RandomHorizontalFlip.h"
 #include "../../include/transform/RandomVerticalFlip.h"
+#include "../../include/transform/RandomResizedCrop.h"
 
 
 TransformPipeline::TransformPipeline(wchar_t** transform_names, char* transform_args, int transform_output_size, int transform_len) {
@@ -25,6 +26,8 @@ TransformPipeline::TransformPipeline(wchar_t** transform_names, char* transform_
             transform = new RandomHorizontalFlip();
         } else if (transform_name == "RandomVerticalFlip") {
             transform = new RandomVerticalFlip();
+        } else if (transform_name == "RandomResizedCrop") {
+            transform = new RandomResizedCrop();
         } else {
             throw std::runtime_error("Transformation not implemented");
         }
@@ -56,6 +59,9 @@ void TransformPipeline::transform(char* src_buffer, unsigned long src_len, char*
         } else if (transform_name == "RandomVerticalFlip") {
             auto* transform = (RandomVerticalFlip*) (*transformation_pointer);
             transform->transform(img);
+        } else if (transform_name == "RandomResizedCrop") {
+            auto* transform = (RandomResizedCrop*) (*transformation_pointer);
+            img = transform->transform(img);
         }
         transformation_pointer++;
     }

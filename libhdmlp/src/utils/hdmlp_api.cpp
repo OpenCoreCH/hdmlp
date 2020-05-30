@@ -15,7 +15,6 @@ int setup(wchar_t* dataset_path,
           char* transform_args,
           int transform_output_size,
           int transform_len) {
-    printf("HDMLP API %p\n", (void *)transform_args);
     int job_id = 0;
     while (job_id < PARALLEL_JOBS_LIMIT) {
         if (!used_map[job_id]) {
