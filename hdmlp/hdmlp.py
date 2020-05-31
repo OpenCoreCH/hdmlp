@@ -31,7 +31,7 @@ class Job:
             raise ValueError("Distribution scheme {} not supported".format(distr_scheme))
         self.distr_scheme = self.DISTR_SCHEMES[distr_scheme]
         self.drop_last_batch = drop_last_batch
-        self.transforms = transforms
+        self.transforms = [] if transforms is None else transforms
         self.transformed_size = 0
         self.trans_w, self.trans_h = None, None
         if transforms is not None:

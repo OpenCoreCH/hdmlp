@@ -7,6 +7,7 @@
 #include "../../include/transform/RandomHorizontalFlip.h"
 #include "../../include/transform/RandomVerticalFlip.h"
 #include "../../include/transform/RandomResizedCrop.h"
+#include "../../include/transform/Normalize.h"
 
 
 TransformPipeline::TransformPipeline(wchar_t** transform_names, char* transform_args, int transform_output_size, int transform_len) {
@@ -28,6 +29,8 @@ TransformPipeline::TransformPipeline(wchar_t** transform_names, char* transform_
             transform = new RandomVerticalFlip();
         } else if (transform_name == "RandomResizedCrop") {
             transform = new RandomResizedCrop();
+        } else if (transform_name == "Normalize") {
+            transform = new Normalize();
         } else {
             throw std::runtime_error("Transformation not implemented");
         }
@@ -62,6 +65,12 @@ void TransformPipeline::transform(char* src_buffer, unsigned long src_len, char*
         } else if (transform_name == "RandomResizedCrop") {
             auto* transform = (RandomResizedCrop*) (*transformation_pointer);
             img = transform->transform(img);
+        } else if (transform_name == "Normalize") {
+            if (!is_tensor) {
+                throw std::runtime_error("Normalize can only be called on tensors!");
+            }
+            auto* transform = (Normalize*) (*transformation_pointer);
+            tensor = transform->transform(tensor);
         }
         transformation_pointer++;
     }

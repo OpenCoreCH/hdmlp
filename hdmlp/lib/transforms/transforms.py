@@ -106,7 +106,7 @@ class ToTensor(Transform):
 
 
 class Normalize(Transform):
-    arg_types = [ctypes.c_float * 3, ctypes.c_float * 3]
+    arg_types = [ctypes.c_double * 3, ctypes.c_double * 3]
 
     def __init__(self, mean, std):
         self.mean = mean
@@ -119,4 +119,4 @@ class Normalize(Transform):
         return w_in * h_in * 3 * 4  # 3 Channel FP32 Tensor
 
     def get_args(self):
-        return [(ctypes.c_float * 3)(*self.mean), (ctypes.c_float * 3)(*self.std)]
+        return [(ctypes.c_double * 3)(*self.mean), (ctypes.c_double * 3)(*self.std)]
