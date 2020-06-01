@@ -39,7 +39,7 @@ setup(
     description='Hierarchical Distributed Machine Learning Prefetcher',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    packages=['hdmlp', 'hdmlp.lib.torch'],
+    packages=['hdmlp', 'hdmlp.lib.torch', 'hdmlp.lib.transforms'],
     data_files=[('', ['libhdmlp/build/libhdmlp.' + LIB_EXTENSION])],
     zip_safe=False,
     install_requires=[
