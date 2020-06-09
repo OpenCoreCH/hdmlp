@@ -91,11 +91,10 @@ void FileSystemBackend::init_mappings(int node_id) {
     if (checkpoint && node_id == 0) {
         checkpoint_stream.open(path + "/hdmlp_metadata_",  std::ofstream::out | std::ofstream::trunc);
     }
-    for (int unsigned long i = 0; i < file_information.size(); i++) {
-        FileInformation fi = file_information[i];
-        id_mappings[i] = fi.file_name;
-        label_mappings[i] = fi.label;
-        size_mappings[i] = fi.file_size;
+    for (const auto& fi : file_information) {
+        id_mappings.push_back(fi.file_name);
+        label_mappings.push_back(fi.label);
+        size_mappings.push_back(fi.file_size);
         if (checkpoint && node_id == 0) {
             checkpoint_stream << fi.file_name << "," << fi.label << "," << fi.file_size << std::endl;
         }
@@ -124,9 +123,9 @@ void FileSystemBackend::init_mappings_from_checkpoint(int node_id) {
         std::getline(ss, file_name, ',');
         std::getline(ss, label, ',');
         ss >> file_size;
-        id_mappings[file_id] = file_name;
-        label_mappings[file_id] = label;
-        size_mappings[file_id] = file_size;
+        id_mappings.push_back(file_name);
+        label_mappings.push_back(label);
+        size_mappings.push_back(file_size);
 
         file_id++;
     }

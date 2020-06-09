@@ -2,6 +2,7 @@
 #define HDMLP_FILESYSTEMBACKEND_H
 
 
+#include <vector>
 #include "StorageBackend.h"
 
 class FileSystemBackend : public StorageBackend {
@@ -23,9 +24,9 @@ private:
         int file_size;
     };
     std::string path;
-    std::unordered_map<int, std::string> label_mappings;
-    std::unordered_map<int, int> size_mappings;
-    std::unordered_map<int, std::string> id_mappings;
+    std::vector<std::string> label_mappings;
+    std::vector<int> size_mappings;
+    std::vector<std::string> id_mappings;
     bool checkpoint;
 
     void init_mappings(int node_id);
