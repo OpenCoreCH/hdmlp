@@ -3,11 +3,8 @@
 #include <thread>
 #include "../../include/utils/DistributedManager.h"
 
-DistributedManager::DistributedManager(MetadataStore* metadata_store, // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
-                                       StorageBackend* storage_backend,
-                                       PrefetcherBackend** prefetcher_backends) {
+DistributedManager::DistributedManager(MetadataStore* metadata_store, PrefetcherBackend** prefetcher_backends) {
     this->metadata_store = metadata_store;
-    this->storage_backend = storage_backend;
     pf_backends = prefetcher_backends;
     int initialized; // If multiple jobs run in parallel or MPI was already initialized by e.g. Horovod, initialize only once
     MPI_Initialized(&initialized);
@@ -33,11 +30,15 @@ DistributedManager::~DistributedManager() {
     }
 }
 
-int DistributedManager::get_no_nodes() {
+void DistributedManager::set_backend(StorageBackend* backend) {
+    storage_backend = backend;
+}
+
+int DistributedManager::get_no_nodes() const {
     return n;
 }
 
-int DistributedManager::get_node_id() {
+int DistributedManager::get_node_id() const {
     return node_id;
 }
 
@@ -184,4 +185,3 @@ void DistributedManager::stop_all_threads(int num_threads) {
     }
     MPI_Comm_free(&JOB_COMM);
 }
-

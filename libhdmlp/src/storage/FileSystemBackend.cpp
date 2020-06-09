@@ -7,9 +7,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <vector>
+#include <fstream>
+#include <sstream>
 
 
-FileSystemBackend::FileSystemBackend(const std::wstring& path) {
+FileSystemBackend::FileSystemBackend(const std::wstring& path, bool checkpoint, int node_id) {
     using type = std::codecvt_utf8<wchar_t>;
     std::wstring_convert<type, wchar_t> converter;
     std::string str_path = converter.to_bytes(path);
@@ -17,7 +19,12 @@ FileSystemBackend::FileSystemBackend(const std::wstring& path) {
         str_path += '/';
     }
     this->path = str_path;
-    this->init_mappings();
+    this->checkpoint = checkpoint;
+    if (checkpoint) {
+        this->init_mappings_from_checkpoint(node_id);
+    } else {
+        this->init_mappings(node_id);
+    }
 }
 
 std::string FileSystemBackend::get_label(int file_id) {
@@ -28,7 +35,7 @@ int FileSystemBackend::get_length() {
     return id_mappings.size();
 }
 
-void FileSystemBackend::init_mappings() {
+void FileSystemBackend::init_mappings(int node_id) {
     std::vector<FileInformation> file_information;
     struct dirent* entry = nullptr;
     DIR* dp = nullptr;
@@ -80,12 +87,50 @@ void FileSystemBackend::init_mappings() {
                   return a.label + a.file_name > b.label + b.file_name;
               }
     );
+    std::ofstream checkpoint_stream;
+    if (checkpoint && node_id == 0) {
+        checkpoint_stream.open(path + "/hdmlp_metadata_",  std::ofstream::out | std::ofstream::trunc);
+    }
     for (int unsigned long i = 0; i < file_information.size(); i++) {
         FileInformation fi = file_information[i];
         id_mappings[i] = fi.file_name;
         label_mappings[i] = fi.label;
         size_mappings[i] = fi.file_size;
+        if (checkpoint && node_id == 0) {
+            checkpoint_stream << fi.file_name << "," << fi.label << "," << fi.file_size << std::endl;
+        }
     }
+    if (checkpoint && node_id == 0) {
+        checkpoint_stream.close();
+        // Rename after file was completely written to ensure no nodes see partially written files:
+        std::rename((path + "/hdmlp_metadata_").c_str(), (path + "/hdmlp_metadata").c_str());
+    }
+}
+
+
+void FileSystemBackend::init_mappings_from_checkpoint(int node_id) {
+    std::ifstream checkpoint_stream(path + "/hdmlp_metadata");
+    if (checkpoint_stream.fail()) {
+        this->init_mappings(node_id);
+    }
+    std::string line;
+    unsigned long file_id = 0;
+    while(std::getline(checkpoint_stream, line)) {
+        std::stringstream ss(line);
+
+        std::string label;
+        std::string file_name;
+        int file_size;
+        std::getline(ss, file_name, ',');
+        std::getline(ss, label, ',');
+        ss >> file_size;
+        id_mappings[file_id] = file_name;
+        label_mappings[file_id] = label;
+        size_mappings[file_id] = file_size;
+
+        file_id++;
+    }
+
 }
 
 std::string FileSystemBackend::abs_path(const std::string* rel_path) {
@@ -111,3 +156,4 @@ void FileSystemBackend::fetch(int file_id, char* dst) {
     fread(dst, 1, entry_size, f);
     fclose(f);
 }
+

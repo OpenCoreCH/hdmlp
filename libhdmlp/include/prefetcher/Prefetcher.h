@@ -65,6 +65,7 @@ private:
     int no_distributed_threads;
     int networkbandwidth_clients;
     int networkbandwidth_filesystem;
+    bool checkpoint;
 
     void init_config(const std::wstring& path);
 

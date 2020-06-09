@@ -6,7 +6,7 @@
 
 class FileSystemBackend : public StorageBackend {
 public:
-    explicit FileSystemBackend(const std::wstring& path);
+    FileSystemBackend(const std::wstring& path, bool checkpoint, int node_id);
 
     std::string get_label(int file_id) override;
 
@@ -26,10 +26,13 @@ private:
     std::unordered_map<int, std::string> label_mappings;
     std::unordered_map<int, int> size_mappings;
     std::unordered_map<int, std::string> id_mappings;
+    bool checkpoint;
 
-    void init_mappings();
+    void init_mappings(int node_id);
 
     std::string abs_path(const std::string* rel_path);
+
+    void init_mappings_from_checkpoint(int node_id);
 };
 
 

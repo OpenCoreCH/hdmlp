@@ -21,13 +21,14 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidel
                        int transform_output_size,
                        int transform_len) {
     init_config(config_path);
-    backend = new FileSystemBackend(dataset_path);
     metadata_store = new MetadataStore(networkbandwidth_clients, networkbandwidth_filesystem, &config_pfs_bandwidth, &config_bandwidths,
                                        &config_no_threads);
-    distr_manager = new DistributedManager(metadata_store, backend, pf_backends);
+    distr_manager = new DistributedManager(metadata_store, pf_backends);
     n = distr_manager->get_no_nodes();
     metadata_store->set_no_nodes(n);
     node_id = distr_manager->get_node_id();
+    backend = new FileSystemBackend(dataset_path, checkpoint, node_id);
+    distr_manager->set_backend(backend);
     this->job_id = job_id;
     if (seed == 0) {
         seed = distr_manager->generate_and_broadcast_seed();
@@ -59,6 +60,8 @@ void Prefetcher::init_config(const std::wstring& path) {
     for (int i = 0; i < classes - 1; i++) {
         pf_backends[i] = nullptr;
     }
+    checkpoint = config.get_checkpoint();
+    std::cout << "Checkpoint is: " << checkpoint << std::endl;
 }
 
 void Prefetcher::init_threads() {

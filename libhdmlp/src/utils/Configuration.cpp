@@ -37,6 +37,16 @@ int Configuration::get_int_entry(const std::string& key) {
     return val;
 }
 
+bool Configuration::get_bool_entry(const std::string& key) {
+    bool val;
+    try {
+        val = cfg.lookup(key);
+    } catch (const libconfig::SettingNotFoundException& nfex) {
+        val = false;
+    }
+    return val;
+}
+
 void Configuration::get_storage_classes(std::vector<unsigned long long int>* capacities,
                                         std::vector<int>* threads,
                                         std::vector<std::map<int, int>>* bandwidths,
@@ -96,4 +106,8 @@ int Configuration::get_no_distributed_threads() {
 void Configuration::get_bandwidths(int* networkbandwidth_clients, int* networkbandwith_filesystem) {
     *networkbandwidth_clients = get_int_entry("b_c");
     *networkbandwith_filesystem = get_int_entry("b_fs");
+}
+
+bool Configuration::get_checkpoint() {
+    return get_bool_entry("checkpoint");
 }

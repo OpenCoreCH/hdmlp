@@ -15,13 +15,13 @@
 
 class DistributedManager {
 public:
-    DistributedManager(MetadataStore* metadata_store, StorageBackend* storage_backend, PrefetcherBackend** prefetcher_backends);
+    DistributedManager(MetadataStore* metadata_store, PrefetcherBackend** prefetcher_backends);
 
     ~DistributedManager();
 
-    int get_no_nodes();
+    int get_no_nodes() const;
 
-    int get_node_id();
+    int get_node_id() const;
 
     void serve();
 
@@ -36,6 +36,8 @@ public:
     int generate_and_broadcast_seed();
 
     void stop_all_threads(int num_threads);
+
+    void set_backend(StorageBackend* pBackend);
 
 private:
     struct FileAvailability {
