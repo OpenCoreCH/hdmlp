@@ -1,6 +1,5 @@
 #include <codecvt>
 #include <locale>
-#include <iostream>
 #include "../../include/prefetcher/Prefetcher.h"
 #include "../../include/storage/FileSystemBackend.h"
 #include "../../include/utils/Configuration.h"
@@ -61,7 +60,6 @@ void Prefetcher::init_config(const std::wstring& path) {
         pf_backends[i] = nullptr;
     }
     checkpoint = config.get_checkpoint();
-    std::cout << "Checkpoint is: " << checkpoint << std::endl;
 }
 
 void Prefetcher::init_threads() {
