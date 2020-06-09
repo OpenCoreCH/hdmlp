@@ -9,7 +9,7 @@ class RandomResizedCrop : public Transformation {
 public:
     char* parse_arguments(char* arg_array);
 
-    cv::Mat transform(cv::Mat img);
+    void transform(TransformPipeline* pipeline);
 
 private:
     int size;

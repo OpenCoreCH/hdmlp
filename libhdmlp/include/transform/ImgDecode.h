@@ -6,7 +6,7 @@
 
 class ImgDecode : public Transformation {
 public:
-    cv::Mat transform(char* src_buffer, unsigned long src_len);
+    void transform(TransformPipeline* pipeline);
 
 };
 

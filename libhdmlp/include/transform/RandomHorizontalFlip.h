@@ -8,7 +8,7 @@ class RandomHorizontalFlip : public Transformation {
 public:
     char* parse_arguments(char* arg_array);
 
-    void transform(cv::Mat img);
+    void transform(TransformPipeline* pipeline);
 
 private:
     float p;

@@ -7,7 +7,7 @@ StagingBufferPrefetcher::StagingBufferPrefetcher(char* staging_buffer, unsigned 
                                                  int no_threads,
                                                  Sampler* sampler, StorageBackend* backend,
                                                  PrefetcherBackend** pf_backends,
-                                                 MetadataStore* metadata_store, DistributedManager* distr_manager, TransformPipeline* transform_pipeline,
+                                                 MetadataStore* metadata_store, DistributedManager* distr_manager, TransformPipeline** transform_pipeline,
                                                  int transform_output_size) {
     this->buffer_size = buffer_size;
     this->staging_buffer = staging_buffer;
@@ -108,7 +108,7 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
             } else {
 
                 fetch(file_id, transform_buffers[thread_id], thread_id);
-                transform_pipeline->transform(transform_buffers[thread_id], file_size, staging_buffer + local_staging_buffer_pointer + label.size() + 1);
+                transform_pipeline[thread_id]->transform(transform_buffers[thread_id], file_size, staging_buffer + local_staging_buffer_pointer + label.size() + 1);
             }
             std::unique_lock<std::mutex> staging_buffer_lock(staging_buffer_mutex);
             // Check if all the previous file ends were inserted to the queue. If not, don't insert, but only set

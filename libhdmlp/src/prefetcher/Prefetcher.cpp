@@ -36,7 +36,10 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidel
     sampler->get_prefetch_string(node_id, &config_capacities, &prefetch_string, &storage_class_ends, true);
     distr_manager->distribute_prefetch_strings(&prefetch_string, &storage_class_ends, config_no_threads.size());
     if (transform_len > 0) {
-        transform_pipeline = new TransformPipeline(transform_names, transform_args, transform_output_size, transform_len);
+        transform_pipeline = new TransformPipeline*[config_no_threads[0]];
+        for (int i = 0; i < config_no_threads[0]; i++) {
+            transform_pipeline[i] = new TransformPipeline(transform_names, transform_args, transform_output_size, transform_len);
+        }
     }
     init_threads();
     init_distr_threads();
@@ -70,7 +73,7 @@ void Prefetcher::init_threads() {
                     staging_buffer = new char[staging_buffer_capacity];
                     int transform_output_size = 0;
                     if (transform_pipeline != nullptr) {
-                        transform_output_size = transform_pipeline->get_output_size();
+                        transform_output_size = transform_pipeline[0]->get_output_size();
                     }
                     sbf = new StagingBufferPrefetcher(staging_buffer,
                                                       staging_buffer_capacity,
@@ -151,6 +154,9 @@ Prefetcher::~Prefetcher() {
     }
     for (int i = 0; i < used_classes - 1; i++) {
         delete pf_backends[i];
+    }
+    for (int i = 0; i < config_no_threads[0]; i++) {
+        delete transform_pipeline[i];
     }
     delete[] pf_backends;
     delete backend;

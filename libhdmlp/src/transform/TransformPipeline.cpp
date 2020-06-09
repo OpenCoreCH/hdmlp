@@ -1,5 +1,4 @@
 #include <codecvt>
-#include "../../include/transform/TransformPipeline.h"
 #include "../../include/transform/Transformation.h"
 #include "../../include/transform/ImgDecode.h"
 #include "../../include/transform/Resize.h"
@@ -41,44 +40,12 @@ TransformPipeline::TransformPipeline(wchar_t** transform_names, char* transform_
 }
 
 void TransformPipeline::transform(char* src_buffer, unsigned long src_len, char* dst_buffer) {
-    cv::Mat img;
-    at::Tensor tensor;
-    bool is_tensor = false;
-    auto transformation_pointer = transformations.begin();
-    for (auto const &transform_name : transformation_names) {
-        if (transform_name == "ImgDecode") {
-            auto* transform = (ImgDecode*) (*transformation_pointer);
-            img = transform->transform(src_buffer, src_len);
-        } else if (transform_name == "Resize") {
-            auto* transform = (Resize*) (*transformation_pointer);
-            transform->transform(img);
-        } else if (transform_name == "ToTensor") {
-            auto* transform = (ToTensor*) (*transformation_pointer);
-            tensor = transform->transform(img);
-            is_tensor = true;
-        } else if (transform_name == "RandomHorizontalFlip") {
-            auto* transform = (RandomHorizontalFlip*) (*transformation_pointer);
-            transform->transform(img);
-        } else if (transform_name == "RandomVerticalFlip") {
-            auto* transform = (RandomVerticalFlip*) (*transformation_pointer);
-            transform->transform(img);
-        } else if (transform_name == "RandomResizedCrop") {
-            auto* transform = (RandomResizedCrop*) (*transformation_pointer);
-            img = transform->transform(img);
-        } else if (transform_name == "Normalize") {
-            if (!is_tensor) {
-                throw std::runtime_error("Normalize can only be called on tensors!");
-            }
-            auto* transform = (Normalize*) (*transformation_pointer);
-            tensor = transform->transform(tensor);
-        }
-        transformation_pointer++;
+    this->src_buffer = src_buffer;
+    this->src_len = src_len;
+    for (auto const &transformation : transformations) {
+        transformation->transform(this);
     }
-    if (is_tensor) {
-        memcpy(dst_buffer, tensor.data_ptr(), output_size);
-    } else {
-        memcpy(dst_buffer, img.data, output_size);
-    }
+    memcpy(dst_buffer, img.data, output_size);
 }
 
 TransformPipeline::~TransformPipeline() {

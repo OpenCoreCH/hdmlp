@@ -15,10 +15,10 @@ char* RandomResizedCrop::parse_arguments(char* arg_array) {
     return arg_array;
 }
 
-cv::Mat RandomResizedCrop::transform(cv::Mat img) {
+void RandomResizedCrop::transform(TransformPipeline* pipeline) {
     cv::Mat out_image;
-    int img_width = img.cols;
-    int img_height = img.rows;
+    int img_width = pipeline->img.cols;
+    int img_height = pipeline->img.rows;
     int img_area = img_width * img_height;
     int w = -1, h = -1, i = -1, j = -1;
     std::random_device rd;
@@ -56,8 +56,7 @@ cv::Mat RandomResizedCrop::transform(cv::Mat img) {
         j = (img_width - w) / 2;
     }
     cv::Rect roi(j, i, w, h);
-    cv::Mat cropped(img, roi);
+    cv::Mat cropped(pipeline->img, roi);
     cv::resize(cropped, cropped, cv::Size(size, size));
-    cropped.copyTo(out_image);
-    return out_image;
+    cropped.copyTo(pipeline->img);
 }

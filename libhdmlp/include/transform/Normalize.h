@@ -8,7 +8,7 @@ class Normalize : public Transformation {
 public:
     char* parse_arguments(char* arg_array);
 
-    at::Tensor transform(const at::Tensor& tensor);
+    void transform(TransformPipeline* pipeline);
 
 private:
 double mean[3];

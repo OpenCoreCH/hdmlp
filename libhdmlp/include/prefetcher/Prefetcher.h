@@ -48,7 +48,7 @@ private:
     PrefetcherBackend** pf_backends;
     MetadataStore* metadata_store;
     DistributedManager* distr_manager;
-    TransformPipeline* transform_pipeline = nullptr;
+    TransformPipeline** transform_pipeline = nullptr;
     std::vector<int> prefetch_string;
     std::vector<std::vector<int>::iterator> storage_class_ends;
     std::vector<unsigned long long int> config_capacities;

@@ -6,11 +6,11 @@ char* RandomVerticalFlip::parse_arguments(char* arg_array) {
     return arg_array + sizeof(float);
 }
 
-void RandomVerticalFlip::transform(cv::Mat img) {
+void RandomVerticalFlip::transform(TransformPipeline* pipeline) {
     std::random_device rd{};
     std::mt19937 rng{rd()};
     std::bernoulli_distribution d(p);
     if (d(rng)) {
-        cv::flip(img, img, 0);
+        cv::flip(pipeline->img, pipeline->img, 0);
     }
 }

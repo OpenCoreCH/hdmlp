@@ -3,7 +3,9 @@
 
 
 #include <list>
-#include "Transformation.h"
+#include <opencv2/opencv.hpp>
+
+class Transformation; // Forward declaration because of circular dependencies
 
 class TransformPipeline {
 public:
@@ -14,6 +16,12 @@ public:
     void transform(char* src_buffer, unsigned long src_len, char* dst_buffer);
 
     int get_output_size() const;
+
+    cv::Mat img;
+
+    unsigned long src_len;
+
+    char* src_buffer;
 
 private:
     int output_size;

@@ -6,8 +6,6 @@ char* Resize::parse_arguments(char* arg_array) {
     return arg_array + 2 * sizeof(int);
 }
 
-void Resize::transform(cv::Mat img) {
-    std::cout << width << std::endl;
-    std::cout << height << std::endl;
-    cv::resize(img, img, cv::Size(width, height));
+void Resize::transform(TransformPipeline* pipeline) {
+    cv::resize(pipeline->img, pipeline->img, cv::Size(width, height));
 }

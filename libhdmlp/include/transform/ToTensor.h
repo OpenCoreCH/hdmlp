@@ -6,7 +6,7 @@
 
 class ToTensor : public Transformation {
 public:
-    at::Tensor transform(const cv::Mat& img);
+    void transform(TransformPipeline* pipeline);
 
 };
 

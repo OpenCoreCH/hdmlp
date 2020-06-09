@@ -1,5 +1,4 @@
 #include "../../include/transform/Normalize.h"
-#include <torch/csrc/api/include/torch/data/transforms/tensor.h>
 
 char* Normalize::parse_arguments(char* arg_array) {
     double* args = ((double*) arg_array);
@@ -12,6 +11,7 @@ char* Normalize::parse_arguments(char* arg_array) {
     return arg_array + 6 * sizeof(double);
 }
 
-at::Tensor Normalize::transform(const at::Tensor& tensor) {
-    return torch::data::transforms::Normalize<>(mean, std)(tensor);
+void Normalize::transform(TransformPipeline* pipeline) {
+    cv::subtract(pipeline->img, cv::Scalar(mean[0], mean[1], mean[2]), pipeline->img);
+    cv::multiply(pipeline->img, cv::Scalar(1. / std[0], 1. / std[1], 1. / std[2]), pipeline->img);
 }

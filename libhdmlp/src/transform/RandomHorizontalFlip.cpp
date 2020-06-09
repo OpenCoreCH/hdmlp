@@ -6,11 +6,11 @@ char* RandomHorizontalFlip::parse_arguments(char* arg_array) {
     return arg_array + sizeof(float);
 }
 
-void RandomHorizontalFlip::transform(cv::Mat img) {
+void RandomHorizontalFlip::transform(TransformPipeline* pipeline) {
     std::random_device rd{};
     std::mt19937 rng{rd()};
     std::bernoulli_distribution d(p);
     if (d(rng)) {
-        cv::flip(img, img, 1);
+        cv::flip(pipeline->img, pipeline->img, 1);
     }
 }
