@@ -7,6 +7,7 @@
 #include "../../include/transform/RandomVerticalFlip.h"
 #include "../../include/transform/RandomResizedCrop.h"
 #include "../../include/transform/Normalize.h"
+#include "../../include/transform/CenterCrop.h"
 
 
 TransformPipeline::TransformPipeline(wchar_t** transform_names, char* transform_args, int transform_output_size, int transform_len) {
@@ -30,6 +31,8 @@ TransformPipeline::TransformPipeline(wchar_t** transform_names, char* transform_
             transform = new RandomResizedCrop();
         } else if (transform_name == "Normalize") {
             transform = new Normalize();
+        } else if (transform_name == "CenterCrop") {
+            transform = new CenterCrop();
         } else {
             throw std::runtime_error("Transformation not implemented");
         }

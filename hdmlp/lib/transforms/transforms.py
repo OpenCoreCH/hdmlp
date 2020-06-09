@@ -53,6 +53,19 @@ class Resize(CVImageManipulation):
     def get_args(self):
         return [self.w, self.h]
 
+class CenterCrop(CVImageManipulation):
+    arg_types = [ctypes.c_int, ctypes.c_int]
+
+    def __init__(self, w_out, h_out):
+        self.w = w_out
+        self.h = h_out
+
+    def get_output_dimensions(self, w_in, h_in):
+        return (self.w, self.h)
+
+    def get_args(self):
+        return [self.w, self.h]
+
 class RandomHorizontalFlip(CVImageManipulation):
     arg_types = [ctypes.c_float]
 
