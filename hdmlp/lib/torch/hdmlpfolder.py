@@ -168,7 +168,7 @@ class HDMLPImageFolder(HDMLPDatasetFolder):
         else:
             w_out, h_out = self.job.get_transformed_dims()
             sample = torch.FloatTensor(torch.FloatStorage.from_buffer(sample, byte_order='native')).reshape(h_out, w_out, 3)
-            sample = sample.unsqueeze(0).permute(0, 3, 1, 2)
+            sample = sample.permute(2, 0, 1)
         target = self.class_to_idx[folder_label]
         if self.transform is not None:
             sample = self.transform(sample)
