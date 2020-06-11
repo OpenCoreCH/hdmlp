@@ -82,6 +82,11 @@ void Sampler::get_access_frequency(std::map<int, int>* access_freq, int node_id,
 void Sampler::get_prefetch_string(int node_id, const std::vector<unsigned long long int>* capacities,
                                   std::vector<int>* prefetch_string,
                                   std::vector<std::vector<int>::iterator>* storage_class_ends, bool in_order) {
+    int num_storage_classes = capacities->size();
+    if (num_storage_classes == 1) {
+        // Only staging buffer
+        return;
+    }
     std::map<int, int> access_freq;
     get_access_frequency(&access_freq, node_id, epochs);
     std::vector<std::pair<int, int>> access_freq_vec;
@@ -95,7 +100,6 @@ void Sampler::get_prefetch_string(int node_id, const std::vector<unsigned long l
     );
     prefetch_string->reserve(access_freq_vec.size());
     unsigned long long curr_size = 0;
-    int num_storage_classes = capacities->size();
     int curr_storage_class = 1;
     for (const auto& pair : access_freq_vec) {
         unsigned long size = backend->get_file_size(pair.first);
