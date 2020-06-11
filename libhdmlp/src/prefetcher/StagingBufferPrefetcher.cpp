@@ -53,6 +53,7 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
         std::vector<int> curr_access_string;
         sampler->get_node_access_string(node_id, &curr_access_string);
         int batch_size = curr_access_string.size();
+        int inserted_until = 0;
         while (true) {
             std::unique_lock<std::mutex> crit_section_lock(prefetcher_mutex);
             while (waiting_for_consumption) {
@@ -116,10 +117,12 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
             curr_iter_file_ends[j] = local_staging_buffer_pointer + entry_size;
             curr_iter_file_ends_ready[j] = true;
             bool all_prev_inserted = true;
-            for (int k = 0; k < j; k++) {
+            for (int k = inserted_until; k < j; k++) {
                 if (!curr_iter_file_ends_ready[k]) {
                     all_prev_inserted = false;
                     break;
+                } else {
+                    inserted_until = k;
                 }
             }
             if (all_prev_inserted) {
