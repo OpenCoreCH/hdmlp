@@ -22,7 +22,7 @@ std::string Configuration::get_string_entry(const std::string& key) {
     try {
         val = cfg.lookup(key).c_str();
     } catch (const libconfig::SettingNotFoundException& nfex) {
-
+        val = "";
     }
     return val;
 }
@@ -110,4 +110,8 @@ void Configuration::get_bandwidths(int* networkbandwidth_clients, int* networkba
 
 bool Configuration::get_checkpoint() {
     return get_bool_entry("checkpoint");
+}
+
+std::string Configuration::get_checkpoint_path() {
+    return get_string_entry("checkpoint_path");
 }

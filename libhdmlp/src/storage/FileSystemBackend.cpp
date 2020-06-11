@@ -11,7 +11,7 @@
 #include <sstream>
 
 
-FileSystemBackend::FileSystemBackend(const std::wstring& path, bool checkpoint, int node_id) {
+FileSystemBackend::FileSystemBackend(const std::wstring& path, bool checkpoint, std::string checkpoint_path, int node_id) {
     using type = std::codecvt_utf8<wchar_t>;
     std::wstring_convert<type, wchar_t> converter;
     std::string str_path = converter.to_bytes(path);
@@ -21,6 +21,11 @@ FileSystemBackend::FileSystemBackend(const std::wstring& path, bool checkpoint, 
     this->path = str_path;
     this->checkpoint = checkpoint;
     if (checkpoint) {
+        if (checkpoint_path == "") {
+            this->checkpoint_path = this->path;
+        } else {
+            this->checkpoint_path = checkpoint_path;
+        }
         this->init_mappings_from_checkpoint(node_id);
     } else {
         this->init_mappings(node_id);
@@ -89,7 +94,7 @@ void FileSystemBackend::init_mappings(int node_id) {
     );
     std::ofstream checkpoint_stream;
     if (checkpoint && node_id == 0) {
-        checkpoint_stream.open(path + "/hdmlp_metadata_",  std::ofstream::out | std::ofstream::trunc);
+        checkpoint_stream.open(checkpoint_path + "/hdmlp_metadata_",  std::ofstream::out | std::ofstream::trunc);
     }
     for (const auto& fi : file_information) {
         id_mappings.push_back(fi.file_name);
@@ -102,13 +107,13 @@ void FileSystemBackend::init_mappings(int node_id) {
     if (checkpoint && node_id == 0) {
         checkpoint_stream.close();
         // Rename after file was completely written to ensure no nodes see partially written files:
-        std::rename((path + "/hdmlp_metadata_").c_str(), (path + "/hdmlp_metadata").c_str());
+        std::rename((checkpoint_path + "/hdmlp_metadata_").c_str(), (checkpoint_path + "/hdmlp_metadata").c_str());
     }
 }
 
 
 void FileSystemBackend::init_mappings_from_checkpoint(int node_id) {
-    std::ifstream checkpoint_stream(path + "/hdmlp_metadata");
+    std::ifstream checkpoint_stream(checkpoint_path + "/hdmlp_metadata");
     if (checkpoint_stream.fail()) {
         this->init_mappings(node_id);
     }

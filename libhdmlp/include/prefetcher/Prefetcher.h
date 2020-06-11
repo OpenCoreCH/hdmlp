@@ -66,6 +66,7 @@ private:
     int networkbandwidth_clients;
     int networkbandwidth_filesystem;
     bool checkpoint;
+    std::string checkpoint_path;
 
     void init_config(const std::wstring& path);
 

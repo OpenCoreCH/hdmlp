@@ -26,7 +26,7 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidel
     n = distr_manager->get_no_nodes();
     metadata_store->set_no_nodes(n);
     node_id = distr_manager->get_node_id();
-    backend = new FileSystemBackend(dataset_path, checkpoint, node_id);
+    backend = new FileSystemBackend(dataset_path, checkpoint, checkpoint_path, node_id);
     distr_manager->set_backend(backend);
     this->job_id = job_id;
     if (seed == 0) {
@@ -60,6 +60,9 @@ void Prefetcher::init_config(const std::wstring& path) {
         pf_backends[i] = nullptr;
     }
     checkpoint = config.get_checkpoint();
+    if (checkpoint) {
+        checkpoint_path = config.get_checkpoint_path();
+    }
 }
 
 void Prefetcher::init_threads() {

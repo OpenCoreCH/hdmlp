@@ -29,6 +29,8 @@ public:
 
     bool get_checkpoint();
 
+    std::string get_checkpoint_path();
+
 private:
     libconfig::Config cfg;
 
