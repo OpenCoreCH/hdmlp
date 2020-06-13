@@ -167,12 +167,13 @@ class HDMLPImageFolder(HDMLPDatasetFolder):
             raise ValueError("Must provide range in batch mode / with transformations")
         if isinstance(item, slice) and not self.img_decode:
             num_items = item.stop - item.start
-        folder_label, sample = self.job.get(num_items)
         if self.img_decode:
+            folder_label, sample = self.job.get(num_items, False)
             sample = pil_decode(sample)
         else:
             w_out, h_out = self.job.get_transformed_dims()
-            sample = torch.FloatTensor(torch.FloatStorage.from_buffer(sample, byte_order='native')).reshape(num_items, h_out, w_out, 3)
+            folder_label, sample = self.job.get(num_items, True, (num_items, h_out, w_out, 3))
+            sample = torch.from_numpy(sample)
             sample = sample.permute(0, 3, 1, 2)
         if isinstance(folder_label, list):
             target = [self.class_to_idx[fl] for fl in folder_label]

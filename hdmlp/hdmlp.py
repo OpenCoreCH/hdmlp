@@ -3,6 +3,7 @@ import pathlib
 from sys import platform
 from typing import Optional, List
 from .lib.transforms import transforms
+import numpy as np
 
 
 class Job:
@@ -110,7 +111,7 @@ class Job:
     def destroy(self):
         self.hdmlp_lib.destroy(self.job_id)
 
-    def get(self, num_items = 1):
+    def get(self, num_items = 1, decode_as_np_array=False, np_array_shape=None):
         labels = []
         file_end = self.hdmlp_lib.get_next_file_end(self.job_id)
         if file_end < self.buffer_offset:
@@ -132,7 +133,11 @@ class Job:
                     label_offset = prev_label_offset + self.label_distance
             else:
                 label_offset += 1
-        file = self.buffer_p[self.buffer_offset + label_offset:file_end]
+        if decode_as_np_array:
+            file = np.ctypeslib.as_array(ctypes.cast(ctypes.cast(self.buffer_p, ctypes.c_void_p).value + self.buffer_offset + label_offset, ctypes.POINTER(ctypes.c_float)),
+                                         np_array_shape)
+        else:
+            file = self.buffer_p[self.buffer_offset + label_offset:file_end]
         self.buffer_offset = file_end
         if num_items == 1:
             labels = labels[0]

@@ -112,7 +112,7 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
                     // std::cout << "CURR BATCH SIZE = " << curr_batch_size << std::endl;
                     //std::cout << "STAGING BUFFER = " << staging_buffer_pointer << std::endl;
                     //std::cout << "BATCH FS = " << curr_batch_size * (transform_output_size + largest_label_size) << std::endl;
-                    if (staging_buffer_pointer + batch_size * (transform_output_size + largest_label_size) > buffer_size) {
+                    if (staging_buffer_pointer + (curr_batch_size + batch_size) * (transform_output_size + largest_label_size) > buffer_size) {
                         staging_buffer_pointer = 0;
                         while (batch_size * (transform_output_size + largest_label_size) >= read_offset) {
                             waiting_for_consumption = true;
