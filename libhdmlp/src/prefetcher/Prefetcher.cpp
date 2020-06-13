@@ -159,8 +159,13 @@ Prefetcher::~Prefetcher() {
     for (int i = 0; i < used_classes - 1; i++) {
         delete pf_backends[i];
     }
-    for (int i = 0; i < config_no_threads[0]; i++) {
-        delete transform_pipeline[i];
+    if (transform_pipeline != nullptr) {
+        for (int i = 0; i < config_no_threads[0]; i++) {
+            if (transform_pipeline[i] != nullptr) {
+                delete transform_pipeline[i];
+            }
+        }
+        delete transform_pipeline;
     }
     delete[] pf_backends;
     delete backend;
@@ -169,7 +174,6 @@ Prefetcher::~Prefetcher() {
     delete distr_manager;
     delete sbf;
     delete[] staging_buffer;
-    delete transform_pipeline;
 }
 
 int Prefetcher::get_node_id() {

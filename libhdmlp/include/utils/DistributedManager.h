@@ -16,9 +16,7 @@
 class DistributedManager {
 public:
     DistributedManager(MetadataStore* metadata_store, PrefetcherBackend** prefetcher_backends);
-
-    ~DistributedManager();
-
+    
     int get_no_nodes() const;
 
     int get_node_id() const;

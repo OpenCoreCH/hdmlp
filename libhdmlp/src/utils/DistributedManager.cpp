@@ -23,13 +23,6 @@ DistributedManager::DistributedManager(MetadataStore* metadata_store, Prefetcher
     MPI_Comm_rank(JOB_COMM, &node_id);
 }
 
-DistributedManager::~DistributedManager() {
-    MPI_Barrier(MPI_COMM_WORLD);
-    if (has_initialized_mpi) {
-        MPI_Finalize();
-    }
-}
-
 void DistributedManager::set_backend(StorageBackend* backend) {
     storage_backend = backend;
 }

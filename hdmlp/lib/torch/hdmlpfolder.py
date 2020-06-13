@@ -73,6 +73,7 @@ class HDMLPDatasetFolder(HDMLPVisionDataset):
 
         self.job = hdmlp_job
         self.job.setup()
+        self.job_destroyed = False
 
         self.classes = classes
         self.class_to_idx = class_to_idx
@@ -116,7 +117,9 @@ class HDMLPDatasetFolder(HDMLPVisionDataset):
         return self.job.length()
 
     def __del__(self):
-        self.job.destroy()
+        if not self.job_destroyed:
+            self.job_destroyed = True # Allows destructor to be called multiple times
+            self.job.destroy()
 
     def get_job(self):
         return self.job
