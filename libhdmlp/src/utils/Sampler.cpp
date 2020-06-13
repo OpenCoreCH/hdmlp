@@ -173,3 +173,7 @@ void Sampler::get_first_accesses(std::map<int, int>* first_accesses, int node_id
     }
     random_engine = engine_copy;
 }
+
+int Sampler::get_batch_size() {
+    return batch_size;
+}

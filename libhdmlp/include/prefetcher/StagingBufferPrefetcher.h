@@ -48,7 +48,10 @@ private:
     TransformPipeline** transform_pipeline;
     int node_id;
     int no_threads;
-    bool* global_batch_done;
+    bool* global_iter_done;
+    int batch_size;
+    int curr_batch_size;
+    int largest_label_size = 0;
     bool waiting_for_consumption = false;
     char** transform_buffers;
     int transform_output_size;

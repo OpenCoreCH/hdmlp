@@ -20,11 +20,16 @@ StagingBufferPrefetcher::StagingBufferPrefetcher(char* staging_buffer, unsigned 
     this->distr_manager = distr_manager;
     this->transform_pipeline = transform_pipeline;
     if (transform_pipeline != nullptr) {
+        batch_size = sampler->get_batch_size();
         unsigned long max_file_size = 0;
         for (int i = 0; i < backend->get_length(); i++) {
             unsigned long size = backend->get_file_size(i);
+            int label_size = backend->get_label(i).size() + 1;
             if (size > max_file_size) {
                 max_file_size = size;
+            }
+            if (label_size > largest_label_size) {
+                largest_label_size = label_size;
             }
         }
         transform_buffers = new char*[no_threads];
@@ -33,12 +38,14 @@ StagingBufferPrefetcher::StagingBufferPrefetcher(char* staging_buffer, unsigned 
         }
         this->transform_output_size = transform_output_size;
     }
-    global_batch_done = new bool[no_threads]();
+    std::cout << "Batch size = " << batch_size << std::endl;
+    std::cout << "Label size = " << largest_label_size << std::endl;
+    global_iter_done = new bool[no_threads]();
 }
 
 StagingBufferPrefetcher::~StagingBufferPrefetcher() {
     delete sampler;
-    delete[] global_batch_done;
+    delete[] global_iter_done;
     if (transform_pipeline != nullptr) {
         for (int i = 0; i < no_threads; i++) {
             delete[] transform_buffers[i];
@@ -48,12 +55,12 @@ StagingBufferPrefetcher::~StagingBufferPrefetcher() {
 }
 
 void StagingBufferPrefetcher::prefetch(int thread_id) {
-    //std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     while (true) {
         std::vector<int> curr_access_string;
         sampler->get_node_access_string(node_id, &curr_access_string);
-        int batch_size = curr_access_string.size();
+        int access_string_size = curr_access_string.size();
         int inserted_until = 0;
+        bool do_transform = transform_pipeline != nullptr;
         while (true) {
             std::unique_lock<std::mutex> crit_section_lock(prefetcher_mutex);
             while (waiting_for_consumption) {
@@ -61,41 +68,79 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
             }
             int j = prefetch_offset;
             if (j == 0) {
-                curr_iter_file_ends.resize(batch_size);
-                curr_iter_file_ends_ready.resize(batch_size);
-                for (int i = 0; i < batch_size; i++) {
+                curr_iter_file_ends.resize(access_string_size);
+                curr_iter_file_ends_ready.resize(access_string_size);
+                for (int i = 0; i < access_string_size; i++) {
                     curr_iter_file_ends_ready[i] = false;
                 }
             }
             prefetch_offset += 1;
 
-            if (j >= batch_size) {
+            if (j >= access_string_size) {
                 break;
             }
             int file_id = curr_access_string[j];
             unsigned long file_size = backend->get_file_size(file_id);
             std::string label = backend->get_label(file_id);
             unsigned long entry_size = file_size + label.size() + 1;
-            if (transform_pipeline != nullptr) {
+            if (do_transform) {
+                // Batch mode, i.e. we fetch batch_size consecutive labels / samples
                 entry_size = transform_output_size + label.size() + 1;
-            }
-            while (staging_buffer_pointer < read_offset && staging_buffer_pointer + entry_size >= read_offset) {
-                // Prevent overwriting of non-read data
-                waiting_for_consumption = true;
-                read_offset_cond_var.wait(crit_section_lock);
-            }
-
-            if (staging_buffer_pointer + entry_size > buffer_size) {
-                // Start again at beginning of array
-                staging_buffer_pointer = 0;
-                waiting_for_consumption = true;
-                // Ensure that overwriting is not possible after reset of pointer
-                while (entry_size >= read_offset) {
+                if (j % batch_size == 0) {
+                    // If drop_last is false, can have smaller batches
+                    curr_batch_size = std::min(access_string_size - j, batch_size);
+                    //std::cout << "CURR BATCH SIZE = " << curr_batch_size << std::endl;
+                    // We're starting a new batch, need to check if there is enough space
+                    while (staging_buffer_pointer < read_offset && staging_buffer_pointer + curr_batch_size * (transform_output_size + largest_label_size) >= read_offset) {
+                        // Prevent overwriting of non-read data
+                        waiting_for_consumption = true;
+                        read_offset_cond_var.wait(crit_section_lock);
+                    }
+                }
+            } else {
+                while (staging_buffer_pointer < read_offset && staging_buffer_pointer + entry_size >= read_offset) {
+                    // Prevent overwriting of non-read data
+                    waiting_for_consumption = true;
                     read_offset_cond_var.wait(crit_section_lock);
                 }
             }
-            unsigned long long int local_staging_buffer_pointer = staging_buffer_pointer;
-            staging_buffer_pointer += entry_size;
+
+            unsigned long long int local_staging_buffer_pointer;
+            int batch_offset = 0;
+            if (do_transform) {
+                if (j % batch_size == batch_size - 1 || j == access_string_size - 1) {
+                    // std::cout << "CURR BATCH SIZE = " << curr_batch_size << std::endl;
+                    //std::cout << "STAGING BUFFER = " << staging_buffer_pointer << std::endl;
+                    //std::cout << "BATCH FS = " << curr_batch_size * (transform_output_size + largest_label_size) << std::endl;
+                    if (staging_buffer_pointer + batch_size * (transform_output_size + largest_label_size) > buffer_size) {
+                        staging_buffer_pointer = 0;
+                        while (batch_size * (transform_output_size + largest_label_size) >= read_offset) {
+                            waiting_for_consumption = true;
+                            read_offset_cond_var.wait(crit_section_lock);
+                        }
+                    }
+
+                    local_staging_buffer_pointer = staging_buffer_pointer;
+                    staging_buffer_pointer += curr_batch_size * (transform_output_size + largest_label_size);
+                } else {
+                    local_staging_buffer_pointer = staging_buffer_pointer;
+                }
+                batch_offset = j % batch_size;
+            } else {
+                if (staging_buffer_pointer + entry_size > buffer_size) {
+                    // Start again at beginning of array
+                    staging_buffer_pointer = 0;
+                    // Ensure that overwriting is not possible after reset of pointer
+                    while (entry_size >= read_offset) {
+                        waiting_for_consumption = true;
+                        read_offset_cond_var.wait(crit_section_lock);
+                    }
+                }
+                local_staging_buffer_pointer = staging_buffer_pointer;
+                staging_buffer_pointer += entry_size;
+            }
+            int curr_local_batch_size = curr_batch_size;
+
             if (waiting_for_consumption) {
                 waiting_for_consumption = false;
                 consumption_waiting_cond_var.notify_all();
@@ -103,18 +148,30 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
             crit_section_lock.unlock();
 
 
-            strcpy(staging_buffer + local_staging_buffer_pointer, label.c_str());
-            if (transform_pipeline == nullptr) {
+            strcpy(staging_buffer + local_staging_buffer_pointer + batch_offset * largest_label_size, label.c_str());
+            if (do_transform) {
+                // Fill remaining bytes with zero bytes
+                for (unsigned long long k = local_staging_buffer_pointer + batch_offset * largest_label_size + label.size() + 1;
+                    k < local_staging_buffer_pointer + (batch_offset + 1) * largest_label_size; k++) {
+                    staging_buffer[k] = 0;
+                }
+            }
+            if (!do_transform) {
                 fetch(file_id, staging_buffer + local_staging_buffer_pointer + label.size() + 1, thread_id);
             } else {
-
                 fetch(file_id, transform_buffers[thread_id], thread_id);
-                transform_pipeline[thread_id]->transform(transform_buffers[thread_id], file_size, staging_buffer + local_staging_buffer_pointer + label.size() + 1);
+                //std::cout << "COPYING TO " <<  local_staging_buffer_pointer + curr_batch_size * largest_label_size + batch_offset * transform_output_size << std::endl;
+                transform_pipeline[thread_id]->transform(transform_buffers[thread_id], file_size,
+                        staging_buffer + local_staging_buffer_pointer + curr_local_batch_size * largest_label_size + batch_offset * transform_output_size);
             }
             std::unique_lock<std::mutex> staging_buffer_lock(staging_buffer_mutex);
             // Check if all the previous file ends were inserted to the queue. If not, don't insert, but only set
             // curr_iter_file_ends / curr_iter_file_ends_ready s.t. another thread will insert it
-            curr_iter_file_ends[j] = local_staging_buffer_pointer + entry_size;
+            if (!do_transform) {
+                curr_iter_file_ends[j] = local_staging_buffer_pointer + entry_size;
+            } else {
+                curr_iter_file_ends[j] = local_staging_buffer_pointer + curr_local_batch_size * largest_label_size + (batch_offset + 1) * transform_output_size;
+            }
             curr_iter_file_ends_ready[j] = true;
             bool all_prev_inserted = true;
             for (int k = inserted_until; k < j; k++) {
@@ -128,11 +185,17 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
             if (all_prev_inserted) {
                 // Also insert file_ends from faster threads
                 int k = j;
-                while (k < batch_size && curr_iter_file_ends_ready[k]) {
-                    file_ends.push_back(curr_iter_file_ends[k]);
+                bool inserted = false;
+                while (k < access_string_size && curr_iter_file_ends_ready[k]) {
+                    if (!do_transform || k % batch_size == batch_size - 1 || k == access_string_size - 1) {
+                        file_ends.push_back(curr_iter_file_ends[k]);
+                        inserted = true;
+                    }
                     k++;
                 }
-                staging_buffer_cond_var.notify_one();
+                if (inserted) {
+                    staging_buffer_cond_var.notify_one();
+                }
             }
             staging_buffer_lock.unlock();
         }
@@ -140,9 +203,9 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
 
         // Advance batch when all threads are done with the current one
         std::unique_lock<std::mutex> crit_section_lock(prefetcher_mutex);
-        global_batch_done[thread_id] = true;
+        global_iter_done[thread_id] = true;
         for (int i = 0; i < no_threads; i++) {
-            if (!global_batch_done[i]) {
+            if (!global_iter_done[i]) {
                 all_threads_done = false;
             }
         }
@@ -151,7 +214,7 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
             prefetch_batch += 1;
             prefetch_offset = 0;
             for (int i = 0; i < no_threads; i++) {
-                global_batch_done[i] = false;
+                global_iter_done[i] = false;
             }
             batch_advancement_cond_var.notify_all();
         } else {

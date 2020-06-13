@@ -36,14 +36,22 @@ class HDMLPDataLoader(object):
                     self.batch_offset = 0
                     raise StopIteration
 
-        labels = []
-        samples = []
-        for i in range(iter_batch_size):
-            sample, label = self.dataset[0]
-            labels.append(torch.as_tensor(label))
-            samples.append(sample)
+
         self.batch_offset += self.global_batch_size
-        return torch.stack(samples, 0), torch.stack(labels, 0)
+
+        samples, labels = self.dataset[0:iter_batch_size]
+        if isinstance(labels, list):
+            # Batch mode
+            labels = [torch.as_tensor(label) for label in labels]
+            return samples, torch.stack(labels, 0)
+        else:
+            sample_list = [samples]
+            label_list = [torch.as_tensor(labels)]
+            for i in range(iter_batch_size - 1):
+                sample, label = self.dataset[0]
+                label_list.append(torch.as_tensor(label))
+                sample_list.append(sample)
+            return torch.stack(sample_list, 0), torch.stack(label_list, 0)
 
     def __len__(self):
         return len(self.dataset)

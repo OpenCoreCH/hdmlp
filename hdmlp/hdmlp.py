@@ -110,17 +110,33 @@ class Job:
     def destroy(self):
         self.hdmlp_lib.destroy(self.job_id)
 
-    def get(self):
+    def get(self, num_items = 1):
+        labels = []
         file_end = self.hdmlp_lib.get_next_file_end(self.job_id)
         if file_end < self.buffer_offset:
             self.buffer_offset = 0
         label_offset = 0
-        while self.buffer_p[self.buffer_offset + label_offset] != b'\x00':
-            label_offset += 1
-        label = self.buffer_p[self.buffer_offset:self.buffer_offset + label_offset].decode('utf-8')
-        file = self.buffer_p[self.buffer_offset + label_offset + 1:file_end]
+        self.label_distance = 0
+        for i in range(num_items):
+            prev_label_offset = label_offset
+            while self.buffer_p[self.buffer_offset + label_offset] != b'\x00':
+                label_offset += 1
+            labels.append(self.buffer_p[self.buffer_offset + prev_label_offset:self.buffer_offset + label_offset].decode('utf-8'))
+            if num_items > 1:
+                if i == 0 and self.label_distance == 0:
+                    while self.buffer_p[self.buffer_offset + label_offset] == b'\x00':
+                        label_offset += 1
+                    self.label_distance = label_offset
+                    #print(label_distance)
+                else:
+                    label_offset = prev_label_offset + self.label_distance
+            else:
+                label_offset += 1
+        file = self.buffer_p[self.buffer_offset + label_offset:file_end]
         self.buffer_offset = file_end
-        return label, file
+        if num_items == 1:
+            labels = labels[0]
+        return labels, file
 
     def length(self):
         return self.hdmlp_lib.length(self.job_id)
