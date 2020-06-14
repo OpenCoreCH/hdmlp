@@ -20,7 +20,7 @@ StagingBufferPrefetcher::StagingBufferPrefetcher(char* staging_buffer, unsigned 
     this->distr_manager = distr_manager;
     this->transform_pipeline = transform_pipeline;
     if (transform_pipeline != nullptr) {
-        batch_size = sampler->get_batch_size();
+        batch_size = sampler->get_node_local_batch_size();
         unsigned long max_file_size = 0;
         for (int i = 0; i < backend->get_length(); i++) {
             unsigned long size = backend->get_file_size(i);

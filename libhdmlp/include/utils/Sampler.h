@@ -29,6 +29,8 @@ public:
 
     int get_batch_size();
 
+    int get_node_local_batch_size();
+
 private:
     std::default_random_engine random_engine;
     std::vector<int> access_sequence;

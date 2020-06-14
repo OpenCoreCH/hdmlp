@@ -177,3 +177,7 @@ void Sampler::get_first_accesses(std::map<int, int>* first_accesses, int node_id
 int Sampler::get_batch_size() {
     return batch_size;
 }
+
+int Sampler::get_node_local_batch_size() {
+    return node_local_batch_size;
+}
