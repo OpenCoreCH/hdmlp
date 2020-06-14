@@ -38,8 +38,6 @@ StagingBufferPrefetcher::StagingBufferPrefetcher(char* staging_buffer, unsigned 
         }
         this->transform_output_size = transform_output_size;
     }
-    std::cout << "Batch size = " << batch_size << std::endl;
-    std::cout << "Label size = " << largest_label_size << std::endl;
     global_iter_done = new bool[no_threads]();
 }
 
@@ -89,7 +87,6 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
                 if (j % batch_size == 0) {
                     // If drop_last is false, can have smaller batches
                     curr_batch_size = std::min(access_string_size - j, batch_size);
-                    //std::cout << "CURR BATCH SIZE = " << curr_batch_size << std::endl;
                     // We're starting a new batch, need to check if there is enough space
                     while (staging_buffer_pointer < read_offset && staging_buffer_pointer + curr_batch_size * (transform_output_size + largest_label_size) >= read_offset) {
                         // Prevent overwriting of non-read data
@@ -109,9 +106,6 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
             int batch_offset = 0;
             if (do_transform) {
                 if (j % batch_size == batch_size - 1 || j == access_string_size - 1) {
-                    // std::cout << "CURR BATCH SIZE = " << curr_batch_size << std::endl;
-                    //std::cout << "STAGING BUFFER = " << staging_buffer_pointer << std::endl;
-                    //std::cout << "BATCH FS = " << curr_batch_size * (transform_output_size + largest_label_size) << std::endl;
                     if (staging_buffer_pointer + (curr_batch_size + batch_size) * (transform_output_size + largest_label_size) > buffer_size) {
                         staging_buffer_pointer = 0;
                         while (batch_size * (transform_output_size + largest_label_size) >= read_offset) {
@@ -160,7 +154,6 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
                 fetch(file_id, staging_buffer + local_staging_buffer_pointer + label.size() + 1, thread_id);
             } else {
                 fetch(file_id, transform_buffers[thread_id], thread_id);
-                //std::cout << "COPYING TO " <<  local_staging_buffer_pointer + curr_batch_size * largest_label_size + batch_offset * transform_output_size << std::endl;
                 transform_pipeline[thread_id]->transform(transform_buffers[thread_id], file_size,
                         staging_buffer + local_staging_buffer_pointer + curr_local_batch_size * largest_label_size + batch_offset * transform_output_size);
             }
