@@ -125,7 +125,8 @@ void DistributedManager::parse_received_prefetch_data(int* rcv_data, int arr_siz
                     file_avail.offset = k - offset;
                     file_avail.storage_class = j + 1;
                     if (file_availability.count(file_id) > 0) {
-                        if (file_avail.storage_class < file_availability[file_id].storage_class) {
+                        if (file_avail.storage_class < file_availability[file_id].storage_class ||
+                        (file_avail.storage_class == file_availability[file_id].storage_class && file_avail.offset < file_availability[file_id].offset)) {
                             file_availability[file_id] = file_avail;
                         }
                     } else {
