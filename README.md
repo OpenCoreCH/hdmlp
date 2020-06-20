@@ -1,4 +1,5 @@
 # HDMLP: Hierarchical Distributed Machine Learning Prefetcher
+![HDMLP](hdmlp.png?raw=true "Title")
 
 ## Installation
 Using setuptools:
@@ -13,7 +14,7 @@ export CXXFLAGS=-isystem\ $libconfig_install_location/include/
 ```
 
 ### Non-default OpenCV location
-If OpenCV is installed in a non-default locatoin (`$opencv_install_location`), the environment variable `OpenCV_DIR` needs to be set to:
+If OpenCV is installed in a non-default location (`$opencv_install_location`), the environment variable `OpenCV_DIR` needs to be set to:
 ```
 export OpenCV_DIR=$opencv_install_location/lib64/cmake/opencv4/
 ``` 
@@ -25,3 +26,6 @@ export OpenCV_DIR=$opencv_install_location/lib64/cmake/opencv4/
 - cmake
 - libconfig
 - OpenCV
+
+## License
+HDMLP is published under the new BSD license, see [LICENSE](LICENSE)
