@@ -14,7 +14,8 @@ int setup(wchar_t* dataset_path,
           wchar_t** transform_names,
           char* transform_args,
           int transform_output_size,
-          int transform_len) {
+          int transform_len,
+          wchar_t* filesystem_backend) {
     int job_id = 0;
     while (job_id < PARALLEL_JOBS_LIMIT) {
         if (!used_map[job_id]) {
@@ -38,7 +39,8 @@ int setup(wchar_t* dataset_path,
                                 transform_names,
                                 transform_args,
                                 transform_output_size,
-                                transform_len);
+                                transform_len,
+                                filesystem_backend);
     return job_id;
 }
 

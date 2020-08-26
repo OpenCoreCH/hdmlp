@@ -5,20 +5,13 @@
 #include "../../include/utils/Configuration.h"
 #include "../../include/prefetcher/StagingBufferPrefetcher.h"
 #include "../../include/prefetcher/PrefetcherBackendFactory.h"
+#include "../../include/storage/StorageBackendFactory.h"
 
 
-Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
-                       const std::wstring& config_path,
-                       int batch_size,
-                       int epochs,
-                       int distr_scheme,
+Prefetcher::Prefetcher(const std::wstring& dataset_path, const std::wstring& config_path, int batch_size, int epochs, int distr_scheme,
                        bool drop_last_batch,
-                       int seed,
-                       int job_id,
-                       wchar_t** transform_names,
-                       char* transform_args,
-                       int transform_output_size,
-                       int transform_len) {
+                       int seed, int job_id, wchar_t** transform_names, char* transform_args, int transform_output_size, int transform_len,
+                       const std::wstring& filesystem_backend) {
     init_config(config_path);
     metadata_store = new MetadataStore(networkbandwidth_clients, networkbandwidth_filesystem, &config_pfs_bandwidth, &config_bandwidths,
                                        &config_no_threads);
@@ -26,7 +19,7 @@ Prefetcher::Prefetcher(const std::wstring& dataset_path, // NOLINT(cppcoreguidel
     n = distr_manager->get_no_nodes();
     metadata_store->set_no_nodes(n);
     node_id = distr_manager->get_node_id();
-    backend = new FileSystemBackend(dataset_path, checkpoint, checkpoint_path, node_id);
+    backend = StorageBackendFactory::create(std::string(filesystem_backend.begin(), filesystem_backend.end()), dataset_path, checkpoint, checkpoint_path, node_id);
     distr_manager->set_backend(backend);
     this->job_id = job_id;
     if (seed == 0) {

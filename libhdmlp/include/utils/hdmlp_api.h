@@ -16,7 +16,8 @@ int setup(wchar_t* dataset_path,
           wchar_t** transform_names,
           char* transform_args,
           int transform_output_size,
-          int transform_len);
+          int transform_len,
+          wchar_t* filesystem_backend);
 
 char* get_staging_buffer(int job_id);
 

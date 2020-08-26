@@ -19,7 +19,8 @@ class Job:
                  transforms: Optional[List[transforms.Transform]] = None,
                  seed: Optional[int] = None,
                  config_path: Optional[str] = None,
-                 libhdmlp_path: Optional[str] = None):
+                 libhdmlp_path: Optional[str] = None,
+                 filesystem_backend: Optional[str] = "filesystem"):
         libname = self._get_lib_path(libhdmlp_path)
         self.config_path = self._get_config_path(config_path)
         self.hdmlp_lib = ctypes.CDLL(libname)
@@ -38,6 +39,7 @@ class Job:
         if transforms is not None:
             self._get_transformed_size()
         self.seed = seed
+        self.filesystem_backend = filesystem_backend
         self.buffer_p = None
         self.buffer_offset = 0
         self.job_id = None
@@ -103,7 +105,8 @@ class Job:
                                       cpp_transform_names_arr,
                                       transform_args_arr,
                                       self.transformed_size,
-                                      len(cpp_transform_names))
+                                      len(cpp_transform_names),
+                                      ctypes.c_wchar_p(self.filesystem_backend))
         buffer = self.hdmlp_lib.get_staging_buffer(job_id)
         self.job_id = job_id
         self.buffer_p = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_char))
