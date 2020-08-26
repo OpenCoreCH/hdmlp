@@ -7,13 +7,10 @@
 #include "../../include/prefetcher/FileSystemPrefetcher.h"
 #include "../../include/utils/MetadataStore.h"
 
-FileSystemPrefetcher::FileSystemPrefetcher(std::map<std::string, std::string>& backend_options,
-                                           std::vector<int>::iterator prefetch_start,
-                                           std::vector<int>::iterator prefetch_end,
-                                           unsigned long long int capacity, StorageBackend* backend,
-                                           MetadataStore* metadata_store, int storage_level, int job_id,
-                                           int node_id) :
-        MemoryPrefetcher(backend_options, prefetch_start, prefetch_end, capacity, backend, metadata_store, storage_level, false) {
+FileSystemPrefetcher::FileSystemPrefetcher(std::map<std::string, std::string>& backend_options, std::vector<int>::iterator prefetch_start,
+                                           std::vector<int>::iterator prefetch_end, unsigned long long int capacity, StorageBackend* backend,
+                                           MetadataStore* metadata_store, int storage_level, int job_id, int node_id, Metrics* metrics) :
+        MemoryPrefetcher(backend_options, prefetch_start, prefetch_end, capacity, backend, metadata_store, storage_level, false, metrics) {
     path = backend_options["path"];
     if (path.back() != '/') {
         path += '/';

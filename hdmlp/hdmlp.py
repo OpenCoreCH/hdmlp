@@ -163,3 +163,40 @@ class Job:
 
     def get_transforms(self):
         return self.transforms
+
+    def get_metrics(self):
+        metrics = {
+            "stall_time": [],
+            "augmentation_time": [],
+            "read_times": [],
+            "read_locations": []
+        }
+        stall_time_size = self.hdmlp_lib.get_metric_size(self.job_id, "stall_time", 0, 0)
+        if stall_time_size == 0:
+            print("No metrics acquired during run, did you set HDMLPPROFILING to 1?")
+        else:
+            self.hdmlp_lib.get_stall_time.restype = ctypes.POINTER(ctypes.c_double * stall_time_size)
+            metrics["stall_time"] = [e for e in self.hdmlp_lib.get_stall_time(self.job_id).contents]
+            prefetcher_threads = self.hdmlp_lib.get_metric_size(self.job_id, "augmentation_time", 0, 0)
+            for i in range(prefetcher_threads):
+                num_elems = self.hdmlp_lib.get_metric_size(self.job_id, "augmentation_time_thread", i, 0)
+                self.hdmlp_lib.get_augmentation_time.restype = ctypes.POINTER(ctypes.c_double * num_elems)
+                metrics["augmentation_time"].append([e for e in self.hdmlp_lib.get_augmentation_time(self.job_id, i).contents])
+            storage_classes = self.hdmlp_lib.get_metric_size(self.job_id, "read_times", 0, 0)
+            for i in range(storage_classes):
+                class_read_times = []
+                class_read_locations = []
+                num_threads = self.hdmlp_lib.get_metric_size(self.job_id, "read_times_threads", i, 0)
+                for j in range(num_threads):
+                    num_elems = self.hdmlp_lib.get_metric_size(self.job_id, "read_times_threads_elem", i, j)
+                    self.hdmlp_lib.get_read_times.restype = ctypes.POINTER(ctypes.c_double * num_elems)
+                    self.hdmlp_lib.get_read_locations.restype = ctypes.POINTER(ctypes.c_int * num_elems)
+                    if num_elems == 0:
+                        class_read_times.append([])
+                        class_read_locations.append([])
+                    else:
+                        class_read_times.append([e for e in self.hdmlp_lib.get_read_times(self.job_id, i, j).contents])
+                        class_read_locations.append([e for e in self.hdmlp_lib.get_read_locations(self.job_id, i, j).contents])
+                metrics["read_times"].append(class_read_times)
+                metrics["read_locations"].append(class_read_locations)
+        return metrics

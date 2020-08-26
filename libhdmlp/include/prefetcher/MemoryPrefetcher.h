@@ -8,18 +8,17 @@
 #include "PrefetcherBackend.h"
 #include "../storage/StorageBackend.h"
 #include "../utils/MetadataStore.h"
+#include "../utils/Metrics.h"
 
 class MemoryPrefetcher : public PrefetcherBackend {
 public:
-    MemoryPrefetcher(std::map<std::string, std::string>& backend_options,
-                     std::vector<int>::iterator prefetch_start,
-                     std::vector<int>::iterator prefetch_end,
-                     unsigned long long int capacity, StorageBackend* backend, MetadataStore* metadata_store,
-                     int storage_level, bool alloc_buffer);
+    MemoryPrefetcher(std::map<std::string, std::string>& backend_options, std::vector<int>::iterator prefetch_start,
+                     std::vector<int>::iterator prefetch_end, unsigned long long int capacity, StorageBackend* backend, MetadataStore* metadata_store,
+                     int storage_level, bool alloc_buffer, Metrics* metrics);
 
     ~MemoryPrefetcher() override;
 
-    void prefetch() override;
+    void prefetch(int thread_id, int storage_class) override;
 
     void fetch(int file_id, char* dst) override;
 
@@ -35,6 +34,7 @@ protected:
     std::unordered_map<int, int> buffer_offsets;
     StorageBackend* backend;
     MetadataStore* metadata_store;
+    Metrics* metrics;
     std::vector<int>::iterator prefetch_start;
     std::vector<int>::iterator prefetch_end;
     std::mutex prefetcher_mutex;

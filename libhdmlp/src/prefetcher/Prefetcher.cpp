@@ -63,6 +63,23 @@ void Prefetcher::init_config(const std::wstring& path) {
     if (checkpoint) {
         checkpoint_path = config.get_checkpoint_path();
     }
+    profiling = config.get_profiling();
+    if (profiling) {
+        metrics = new Metrics;
+        for (int i = 0; i < classes; i++) {
+            std::vector<std::vector<int>> read_locations;
+            std::vector<std::vector<double>> read_times;
+            for (int j = 0; j < config_no_threads[i]; j++) {
+                read_locations.emplace_back(std::vector<int>());
+                read_times.emplace_back(std::vector<double>());
+                if (i == 0) {
+                    metrics->augmentation_time.emplace_back(std::vector<double>());
+                }
+            }
+            metrics->read_locations.emplace_back(read_locations);
+            metrics->read_times.emplace_back(read_times);
+        }
+    }
 }
 
 void Prefetcher::init_threads() {
@@ -89,7 +106,8 @@ void Prefetcher::init_threads() {
                                                       metadata_store,
                                                       distr_manager,
                                                       transform_pipeline,
-                                                      transform_output_size);
+                                                      transform_output_size,
+                                                      metrics);
                 }
                 std::thread thread(&StagingBufferPrefetcher::prefetch, std::ref(*sbf), k);
                 storage_class_threads.push_back(std::move(thread));
@@ -111,10 +129,11 @@ void Prefetcher::init_threads() {
                                                                              metadata_store,
                                                                              j,
                                                                              job_id,
-                                                                             node_id);
+                                                                             node_id,
+                                                                             metrics);
                     pf_backends[j - 1] = pf;
                 }
-                std::thread thread(&PrefetcherBackend::prefetch, std::ref(*pf_backends[j - 1]));
+                std::thread thread(&PrefetcherBackend::prefetch, std::ref(*pf_backends[j - 1]), k, j);
                 storage_class_threads.push_back(std::move(thread));
             }
         }
@@ -130,7 +149,16 @@ void Prefetcher::init_distr_threads() {
 }
 
 unsigned long long int Prefetcher::get_next_file_end() {
-    return sbf->get_next_file_end();
+    std::chrono::time_point<std::chrono::steady_clock> t1, t2;
+    if (profiling) {
+        t1 = std::chrono::high_resolution_clock::now();
+    }
+    auto file_end = sbf->get_next_file_end();
+    if (profiling) {
+        t2 = std::chrono::high_resolution_clock::now();
+        metrics->stall_time.emplace_back(std::chrono::duration_cast<std::chrono::seconds>( t2 - t1 ).count());
+    }
+    return file_end;
 }
 
 void Prefetcher::notify_data_consumed(unsigned long long int until_offset) {
@@ -167,6 +195,9 @@ Prefetcher::~Prefetcher() {
         }
         delete transform_pipeline;
     }
+    if (profiling) {
+        delete metrics;
+    }
     delete[] pf_backends;
     delete backend;
     delete sampler;
@@ -183,4 +214,3 @@ int Prefetcher::get_node_id() {
 int Prefetcher::get_no_nodes() {
     return n;
 }
-

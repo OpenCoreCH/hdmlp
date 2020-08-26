@@ -7,14 +7,15 @@
 #include "../utils/MetadataStore.h"
 #include "../utils/DistributedManager.h"
 #include "../transform/TransformPipeline.h"
+#include "../utils/Metrics.h"
 
 
 class StagingBufferPrefetcher {
 public:
     StagingBufferPrefetcher(char* staging_buffer, unsigned long long int buffer_size, int node_id, int no_threads,
                             Sampler* sampler, StorageBackend* backend, PrefetcherBackend** pf_backends,
-                            MetadataStore* metadata_store, DistributedManager* distr_manager, TransformPipeline** transform_pipeline,
-                            int transform_output_size);
+                            MetadataStore* metadata_store, DistributedManager* distr_manager,
+                            TransformPipeline** transform_pipeline, int transform_output_size, Metrics* metrics);
 
     ~StagingBufferPrefetcher();
 
@@ -46,6 +47,7 @@ private:
     MetadataStore* metadata_store;
     DistributedManager* distr_manager;
     TransformPipeline** transform_pipeline;
+    Metrics* metrics;
     int node_id;
     int no_threads;
     bool* global_iter_done;

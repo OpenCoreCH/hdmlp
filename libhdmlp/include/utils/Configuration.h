@@ -31,8 +31,12 @@ public:
 
     std::string get_checkpoint_path();
 
+    bool get_profiling() const;
+
 private:
     libconfig::Config cfg;
+
+    bool profiling_enabled;
 
 };
 

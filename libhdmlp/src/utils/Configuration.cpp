@@ -2,6 +2,7 @@
 #include <sstream>
 #include <map>
 #include <vector>
+#include <cstdlib>
 #include "../../include/utils/Configuration.h"
 
 Configuration::Configuration(const std::string& config_path) {
@@ -15,6 +16,8 @@ Configuration::Configuration(const std::string& config_path) {
               << " - " << pex.getError() << std::endl;
         throw std::runtime_error(error.str());
     }
+    const char* hdmlp_profiling = std::getenv("HDMLPPROFILING");
+    profiling_enabled = !(!hdmlp_profiling || strcmp(hdmlp_profiling, "0") == 0 || strcmp(hdmlp_profiling, "false") == 0);
 }
 
 std::string Configuration::get_string_entry(const std::string& key) {
@@ -114,4 +117,8 @@ bool Configuration::get_checkpoint() {
 
 std::string Configuration::get_checkpoint_path() {
     return get_string_entry("checkpoint_path");
+}
+
+bool Configuration::get_profiling() const {
+    return profiling_enabled;
 }

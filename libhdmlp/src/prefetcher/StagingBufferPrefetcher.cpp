@@ -2,13 +2,12 @@
 #include <thread>
 #include <cstring>
 #include "../../include/prefetcher/StagingBufferPrefetcher.h"
+#include "../../include/utils/Metrics.h"
 
-StagingBufferPrefetcher::StagingBufferPrefetcher(char* staging_buffer, unsigned long long int buffer_size, int node_id,
-                                                 int no_threads,
-                                                 Sampler* sampler, StorageBackend* backend,
-                                                 PrefetcherBackend** pf_backends,
-                                                 MetadataStore* metadata_store, DistributedManager* distr_manager, TransformPipeline** transform_pipeline,
-                                                 int transform_output_size) {
+StagingBufferPrefetcher::StagingBufferPrefetcher(char* staging_buffer, unsigned long long int buffer_size, int node_id, int no_threads,
+                                                 Sampler* sampler, StorageBackend* backend, PrefetcherBackend** pf_backends,
+                                                 MetadataStore* metadata_store, DistributedManager* distr_manager,
+                                                 TransformPipeline** transform_pipeline, int transform_output_size, Metrics* metrics) {
     this->buffer_size = buffer_size;
     this->staging_buffer = staging_buffer;
     this->node_id = node_id;
@@ -19,6 +18,7 @@ StagingBufferPrefetcher::StagingBufferPrefetcher(char* staging_buffer, unsigned 
     this->metadata_store = metadata_store;
     this->distr_manager = distr_manager;
     this->transform_pipeline = transform_pipeline;
+    this->metrics = metrics;
     if (transform_pipeline != nullptr) {
         batch_size = sampler->get_node_local_batch_size();
         unsigned long max_file_size = 0;
@@ -59,6 +59,8 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
         int access_string_size = curr_access_string.size();
         int inserted_until = 0;
         bool do_transform = transform_pipeline != nullptr;
+        bool profiling = metrics != nullptr;
+        std::chrono::time_point<std::chrono::steady_clock> t1, t2;
         while (true) {
             std::unique_lock<std::mutex> crit_section_lock(prefetcher_mutex);
             while (waiting_for_consumption) {
@@ -154,8 +156,15 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
                 fetch(file_id, staging_buffer + local_staging_buffer_pointer + label.size() + 1, thread_id);
             } else {
                 fetch(file_id, transform_buffers[thread_id], thread_id);
+                if (profiling) {
+                    t1 = std::chrono::high_resolution_clock::now();
+                }
                 transform_pipeline[thread_id]->transform(transform_buffers[thread_id], file_size,
                         staging_buffer + local_staging_buffer_pointer + curr_local_batch_size * largest_label_size + batch_offset * transform_output_size);
+                if (profiling) {
+                    t2 = std::chrono::high_resolution_clock::now();
+                    metrics->augmentation_time[thread_id].emplace_back(std::chrono::duration_cast<std::chrono::seconds>( t2 - t1 ).count());
+                }
             }
             std::unique_lock<std::mutex> staging_buffer_lock(staging_buffer_mutex);
             // Check if all the previous file ends were inserted to the queue. If not, don't insert, but only set
@@ -223,19 +232,43 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
 }
 
 void StagingBufferPrefetcher::fetch(int file_id, char* dst, int thread_id) {
+    std::chrono::time_point<std::chrono::steady_clock> t1, t2;
+    bool profiling = metrics != nullptr;
     int remote_storage_level = distr_manager->get_remote_storage_class(file_id);
     int local_storage_level = metadata_store->get_storage_level(file_id);
     int option_order[3];
     metadata_store->get_option_order(local_storage_level, remote_storage_level, option_order);
+    if (profiling) {
+        t1 = std::chrono::high_resolution_clock::now();
+    }
     if (option_order[0] == OPTION_REMOTE) {
         if (distr_manager->fetch(file_id, dst, thread_id)) {
+            if (profiling) {
+                t2 = std::chrono::high_resolution_clock::now();
+                metrics->read_locations[0][thread_id].emplace_back(OPTION_REMOTE);
+                metrics->read_times[0][thread_id].emplace_back(std::chrono::duration_cast<std::chrono::seconds>( t2 - t1 ).count());
+            }
             return;
+        } else if (profiling) {
+            // Track unsuccesful remote fetches as well
+            metrics->read_locations[0][thread_id].emplace_back(-1);
+            metrics->read_times[0][thread_id].emplace_back(std::chrono::duration_cast<std::chrono::seconds>( t2 - t1 ).count());
         }
     }
     if (option_order[0] == OPTION_LOCAL || (option_order[0] == OPTION_REMOTE && option_order[1] == OPTION_LOCAL)) {
         pf_backends[local_storage_level - 1]->fetch(file_id, dst);
+        if (profiling) {
+            t2 = std::chrono::high_resolution_clock::now();
+            metrics->read_locations[0][thread_id].emplace_back(OPTION_LOCAL);
+            metrics->read_times[0][thread_id].emplace_back(std::chrono::duration_cast<std::chrono::seconds>( t2 - t1 ).count());
+        }
     } else {
         backend->fetch(file_id, dst);
+        if (profiling) {
+            t2 = std::chrono::high_resolution_clock::now();
+            metrics->read_locations[0][thread_id].emplace_back(OPTION_PFS);
+            metrics->read_times[0][thread_id].emplace_back(std::chrono::duration_cast<std::chrono::seconds>( t2 - t1 ).count());
+        }
     }
 }
 

@@ -10,6 +10,7 @@
 #include "PrefetcherBackend.h"
 #include "../utils/MetadataStore.h"
 #include "../utils/DistributedManager.h"
+#include "../utils/Metrics.h"
 
 class Prefetcher {
 public:
@@ -40,6 +41,8 @@ public:
 
     int get_no_nodes();
 
+    Metrics* metrics = nullptr;
+
 private:
     char* staging_buffer;
     StorageBackend* backend;
@@ -67,6 +70,7 @@ private:
     int networkbandwidth_filesystem;
     bool checkpoint;
     std::string checkpoint_path;
+    bool profiling;
 
     void init_config(const std::wstring& path);
 

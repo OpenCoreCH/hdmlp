@@ -3,12 +3,10 @@
 #include "../../include/prefetcher/MemoryPrefetcher.h"
 #include "../../include/utils/MetadataStore.h"
 
-MemoryPrefetcher::MemoryPrefetcher(std::map<std::string, std::string>& backend_options,
-                                   std::vector<int>::iterator prefetch_start,
-                                   std::vector<int>::iterator prefetch_end,
-                                   unsigned long long int capacity, StorageBackend* backend,
+MemoryPrefetcher::MemoryPrefetcher(std::map<std::string, std::string>& backend_options, std::vector<int>::iterator prefetch_start,
+                                   std::vector<int>::iterator prefetch_end, unsigned long long int capacity, StorageBackend* backend,
                                    MetadataStore* metadata_store,
-                                   int storage_level, bool alloc_buffer) {
+                                   int storage_level, bool alloc_buffer, Metrics* metrics) {
     if (alloc_buffer) {
         buffer = new char[capacity];
         buffer_allocated = true;
@@ -19,6 +17,7 @@ MemoryPrefetcher::MemoryPrefetcher(std::map<std::string, std::string>& backend_o
     this->metadata_store = metadata_store;
     this->storage_level = storage_level;
     this->capacity = capacity;
+    this->metrics = metrics;
     num_elems = std::distance(prefetch_start, prefetch_end);
     file_ends = new unsigned long long int[num_elems];
 }
@@ -30,8 +29,10 @@ MemoryPrefetcher::~MemoryPrefetcher() {
     delete[] file_ends;
 }
 
-void MemoryPrefetcher::prefetch() {
+void MemoryPrefetcher::prefetch(int thread_id, int storage_class) {
     int local_offset = 0;
+    bool profiling = metrics != nullptr;
+    std::chrono::time_point<std::chrono::steady_clock> t1, t2;
     while (true) {
         std::unique_lock<std::mutex> crit_section_lock(prefetcher_mutex);
         local_offset = prefetch_offset;
@@ -50,7 +51,15 @@ void MemoryPrefetcher::prefetch() {
         buffer_offsets[file_id] = local_offset;
         crit_section_lock.unlock();
 
+        if (profiling) {
+            t1 = std::chrono::high_resolution_clock::now();
+        }
         backend->fetch(file_id, buffer + prev_end);
+        if (profiling) {
+            t2 = std::chrono::high_resolution_clock::now();
+            metrics->read_locations[storage_class][thread_id].emplace_back(OPTION_REMOTE);
+            metrics->read_times[storage_class][thread_id].emplace_back(std::chrono::duration_cast<std::chrono::seconds>( t2 - t1 ).count());
+        }
         metadata_store->insert_cached_file(storage_level, file_id);
     }
 }
