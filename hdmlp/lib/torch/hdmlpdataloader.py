@@ -6,15 +6,15 @@ class HDMLPDataLoader(object):
     def __init__(self, dataset):
         self.dataset = dataset
         self.dataset_size = len(self.dataset)
-        job = self.dataset.get_job()
-        self.n = job.get_no_nodes()
-        self.node_id = job.get_node_id()
-        self.global_batch_size = job.get_batch_size()
-        self.num_epochs = job.get_num_epochs()
+        self.job = self.dataset.get_job()
+        self.n = self.job.get_no_nodes()
+        self.node_id = self.job.get_node_id()
+        self.global_batch_size = self.job.get_batch_size()
+        self.num_epochs = self.job.get_num_epochs()
         # Counts are set to replicate strategy of Sampler.cpp
         self.node_local_batch_size = math.ceil(self.global_batch_size / self.n)
         self.local_batch_size = min(max(self.global_batch_size - self.node_id * self.node_local_batch_size, 0), self.node_local_batch_size)
-        self.drop_last_batch = job.get_drop_last_batch()
+        self.drop_last_batch = self.job.get_drop_last_batch()
         self.batch_offset = 0
 
     def __iter__(self):

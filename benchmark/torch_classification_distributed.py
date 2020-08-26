@@ -10,7 +10,9 @@ import copy
 import hdmlp
 import hdmlp.lib.torch
 import argparse
+import pickle
 from datetime import datetime
+import random
 
 """
 Distributed PyTorch Classification benchmark, based on:
@@ -56,13 +58,24 @@ feature_extract = False
 backend = args.backend
 dataset = args.dataset
 imagenet_devkit_root = args.imagenet_devkit_root
-num_nodes = int(os.environ['SLURM_JOB_NUM_NODES'])
+num_nodes = 1
+if "SLURM_JOB_NUM_NODES" in os.environ:
+    num_nodes = int(os.environ['SLURM_JOB_NUM_NODES'])
+elif "OMPI_COMM_WORLD_SIZE" in os.environ:
+    num_nodes = int(os.environ['OMPI_COMM_WORLD_SIZE'])
 distributed = num_nodes > 1
-node_id = int(os.environ['SLURM_PROCID'])
+node_id = 0
+if "SLURM_PROCID" in os.environ:
+    node_id = int(os.environ['SLURM_PROCID'])
+elif "OMPI_COMM_WORLD_RANK" in os.environ:
+    node_id = int(os.environ['OMPI_COMM_WORLD_RANK'])
 torch_node_id = node_id
 hdmlp_node_id = 0
 init_shared_file = args.init_shared_file
-slurm_jobid = os.environ["SLURM_JOBID"]
+jobid = random.randint(0, 100000000)
+if "SLURM_JOBID" in os.environ:
+    jobid = os.environ["SLURM_JOBID"]
+profiling = False
 
 # PyTorch parameters
 torch_num_workers = args.torch_num_workers
@@ -74,6 +87,11 @@ if val_config_path is None:
     val_config_path = config_path
 drop_last_batch = args.drop_last_batch
 seed = args.seed
+if args.stat_location is not None:
+    # Collect Profiling information
+    profiling = True
+    compute_times = []
+    os.environ["HDMLPPROFILING"] = "1"
 
 if node_id == 0:
     print("Launched at {}".format(datetime.now().strftime("%H:%M:%S")))
@@ -102,7 +120,6 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
             if phase == 'train':
                 model.train()  # Set model to training mode
             else:
-                train_time = time.time() - since
                 if backend == "hdmlp":
                     #dataloaders['train'].dataset.__del__()
                     dataset = hdmlp.lib.torch.HDMLPImageFolder(os.path.join(data_dir, 'val'), hdmlp_val_job)
@@ -130,6 +147,8 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
 
                 # forward
                 # track history if only in train
+                if profiling and phase == "train":
+                    bef_train = time.time()
                 with torch.set_grad_enabled(phase == 'train'):
                     # Get model outputs and calculate loss
                     # Special case for inception because in training it has an auxiliary output. In train
@@ -155,6 +174,8 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
                         print('Iteration {}, Load time: {} ({} / {})'.format(iteration, load_time, torch_node_id, hdmlp_node_id))
 
                 # statistics
+                if profiling and phase == "train":
+                    compute_times.append(time.time() - bef_train)
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data)
                 bef_time = time.time()
@@ -172,12 +193,20 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
                 best_model_wts = copy.deepcopy(model.state_dict())
             if phase == 'val':
                 val_acc_history.append(epoch_acc)
+            if phase == "train" and epoch == num_epochs - 1:
+                overall_train_time = time.time() - since
 
         print()
 
     if args.stat_location is not None:
-        f = open("{}/{}_{}".format(args.stat_location, slurm_jobid, node_id), "w")
-        f.write(str(load_time))
+        f = open("{}/{}_{}".format(args.stat_location, jobid, node_id), "wb")
+        if backend == "hdmlp":
+            pickle.dump({
+                'backend': 'hdmlp',
+                'hdmlp_metrics': dataloaders['train'].job.get_metrics(),
+                'compute_times': compute_times,
+                'train_time': overall_train_time
+            }, f)
         f.close()
     
     time_elapsed = time.time() - since
@@ -185,7 +214,7 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
         print('Training complete in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
         print('Best val Acc: {:4f}'.format(best_acc))
         print('Load time: {}'.format(load_time))
-        print('Training time: {}'.format(train_time))
+        print('Training time: {}'.format(overall_train_time))
 
     # load best model weights
     model.load_state_dict(best_model_wts)
@@ -287,7 +316,7 @@ def find_free_port():
 
 if __name__ == "__main__":
     if num_nodes > 1:
-        file_path = '{}{}'.format(init_shared_file, slurm_jobid)
+        file_path = '{}{}'.format(init_shared_file, jobid)
         dist_url = None
         if node_id == 0:
             import socket

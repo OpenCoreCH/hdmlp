@@ -5,7 +5,7 @@ class PrefetcherBackend {
 public:
     virtual ~PrefetcherBackend() = default;
 
-    virtual void prefetch() = 0;
+    virtual void prefetch(int thread_id, int storage_class) = 0;
 
     virtual void fetch(int file_id, char* dst) = 0;
 

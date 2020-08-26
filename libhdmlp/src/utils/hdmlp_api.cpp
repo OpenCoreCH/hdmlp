@@ -66,6 +66,45 @@ unsigned long long int get_next_file_end(int job_id) {
     return file_end;
 }
 
+int get_metric_size(int job_id, wchar_t* kind, int index, int subindex) {
+    std::wstring wskind(kind);
+    std::string skind(wskind.begin(), wskind.end());
+    if (skind == "stall_time") {
+        if (pf[job_id]->metrics != nullptr) {
+            return pf[job_id]->metrics->stall_time.size();
+        } else {
+            return 0;
+        }
+    } else if (skind == "augmentation_time") {
+        return pf[job_id]->metrics->augmentation_time.size();
+    } else if (skind == "augmentation_time_thread") {
+        return pf[job_id]->metrics->augmentation_time[index].size();
+    } else if (skind == "read_times") {
+        return pf[job_id]->metrics->read_times.size();
+    } else if (skind == "read_times_threads") {
+        return pf[job_id]->metrics->read_times[index].size();
+    } else if (skind == "read_times_threads_elem") {
+        return pf[job_id]->metrics->read_times[index][subindex].size();
+    }
+    return 0;
+}
+
+double* get_stall_time(int job_id) {
+    return pf[job_id]->metrics->stall_time.data();
+}
+
+double* get_augmentation_time(int job_id, int thread_id) {
+    return pf[job_id]->metrics->augmentation_time[thread_id].data();
+}
+
+double* get_read_times(int job_id, int storage_class, int thread_id) {
+    return pf[job_id]->metrics->read_times[storage_class][thread_id].data();
+}
+
+int* get_read_locations(int job_id, int storage_class, int thread_id) {
+    return pf[job_id]->metrics->read_locations[storage_class][thread_id].data();
+}
+
 void destroy(int job_id) {
     delete pf[job_id];
     used_map[job_id] = false;

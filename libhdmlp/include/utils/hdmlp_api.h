@@ -29,5 +29,15 @@ int length(int job_id);
 unsigned long long int get_next_file_end(int job_id);
 
 void destroy(int job_id);
+
+int get_metric_size(int job_id, wchar_t* kind, int index, int subindex);
+
+double* get_stall_time(int job_id);
+
+double* get_augmentation_time(int job_id, int thread_id);
+
+double* get_read_times(int job_id, int storage_class, int thread_id);
+
+int* get_read_locations(int job_id, int storage_class, int thread_id);
 };
 #endif //HDMLP_HDMLP_API_H
