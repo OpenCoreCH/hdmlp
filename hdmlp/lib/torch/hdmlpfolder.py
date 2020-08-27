@@ -174,8 +174,8 @@ class HDMLPImageFolder(HDMLPDatasetFolder):
             folder_label, sample = self.job.get(num_items, False)
             sample = pil_decode(sample)
         else:
-            w_out, h_out = self.job.get_transformed_dims()
-            folder_label, sample = self.job.get(num_items, True, (num_items, h_out, w_out, 3))
+            w_out, h_out, c_out = self.job.get_transformed_dims()
+            folder_label, sample = self.job.get(num_items, True, (num_items, h_out, w_out, c_out))
             sample = torch.from_numpy(sample)
             sample = sample.permute(0, 3, 1, 2)
         if isinstance(folder_label, list):

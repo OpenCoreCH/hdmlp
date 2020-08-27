@@ -25,6 +25,8 @@ public:
 
     unsigned long long int get_next_file_end();
 
+    int largest_label_size = 0;
+
 private:
     unsigned long long int buffer_size;
     int prefetch_batch = 0;
@@ -53,7 +55,6 @@ private:
     bool* global_iter_done;
     int batch_size;
     int curr_batch_size;
-    int largest_label_size = 0;
     bool waiting_for_consumption = false;
     char** transform_buffers;
     int transform_output_size;

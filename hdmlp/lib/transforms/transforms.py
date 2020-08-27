@@ -7,20 +7,22 @@ class Transform:
 
     arg_types = []
 
-    def get_output_dimensions(self, w_in, h_in):
+    def get_output_dimensions(self, w_in, h_in, c_in):
         """
         Returns the dimensions of the image after applying the transformations
         :param w_in:
         :param h_in:
+        :param c_in:
         :return:
         """
-        return (self.UNKNOWN_DIMENSION, self.UNKNOWN_DIMENSION)
+        return (self.UNKNOWN_DIMENSION, self.UNKNOWN_DIMENSION, self.UNKNOWN_DIMENSION)
 
-    def get_output_size(self, w_in, h_in):
+    def get_output_size(self, w_in, h_in, c_in):
         """
         Returns the output size (in byte) of the transform
         :param w_in: width of the input image
         :param h_in: height of the input image
+        :param c_in: number of channels
         """
         return self.UNKNOWN_SIZE
 
@@ -36,9 +38,9 @@ class ImgDecode(Transform):
 
 class CVImageManipulation(Transform):
 
-    def get_output_size(self, w_in, h_in):
-        (dim_x, dim_y) = self.get_output_dimensions(w_in, h_in)
-        return dim_x * dim_y * 3
+    def get_output_size(self, w_in, h_in, c_in):
+        (dim_x, dim_y, dim_c) = self.get_output_dimensions(w_in, h_in, c_in)
+        return dim_x * dim_y * dim_c
 
 class Resize(CVImageManipulation):
     arg_types = [ctypes.c_int, ctypes.c_int]
@@ -47,8 +49,8 @@ class Resize(CVImageManipulation):
         self.w = w_out
         self.h = h_out
 
-    def get_output_dimensions(self, w_in, h_in):
-        return (self.w, self.h)
+    def get_output_dimensions(self, w_in, h_in, c_in):
+        return (self.w, self.h, 3)
 
     def get_args(self):
         return [self.w, self.h]
@@ -60,8 +62,8 @@ class CenterCrop(CVImageManipulation):
         self.w = w_out
         self.h = h_out
 
-    def get_output_dimensions(self, w_in, h_in):
-        return (self.w, self.h)
+    def get_output_dimensions(self, w_in, h_in, c_in):
+        return (self.w, self.h, 3)
 
     def get_args(self):
         return [self.w, self.h]
@@ -72,8 +74,8 @@ class RandomHorizontalFlip(CVImageManipulation):
     def __init__(self, p = 0.5):
         self.p = p
 
-    def get_output_dimensions(self, w_in, h_in):
-        return (w_in, h_in)
+    def get_output_dimensions(self, w_in, h_in, c_in):
+        return (w_in, h_in, c_in)
 
     def get_args(self):
         return [self.p]
@@ -85,8 +87,8 @@ class RandomVerticalFlip(CVImageManipulation):
     def __init__(self, p=0.5):
         self.p = p
 
-    def get_output_dimensions(self, w_in, h_in):
-        return (w_in, h_in)
+    def get_output_dimensions(self, w_in, h_in, c_in):
+        return (w_in, h_in, c_in)
 
     def get_args(self):
         return [self.p]
@@ -100,8 +102,8 @@ class RandomResizedCrop(CVImageManipulation):
         self.scale = scale
         self.ratio = ratio
 
-    def get_output_dimensions(self, w_in, h_in):
-        return (self.size, self.size)
+    def get_output_dimensions(self, w_in, h_in, c_in):
+        return (self.size, self.size, 3)
 
     def get_args(self):
         return [self.size, self.scale[0], self.scale[1], self.ratio[0], self.ratio[1]]
@@ -111,11 +113,11 @@ class ToTensor(Transform):
     def __init__(self):
         pass
 
-    def get_output_dimensions(self, w_in, h_in):
-        return (w_in, h_in)
+    def get_output_dimensions(self, w_in, h_in, c_in):
+        return (w_in, h_in, c_in)
 
-    def get_output_size(self, w_in, h_in):
-        return w_in * h_in * 3 * 4  # 3 Channel FP32 Tensor
+    def get_output_size(self, w_in, h_in, c_in):
+        return w_in * h_in * c_in * 4  # c_in Channel FP32 Tensor
 
 
 class Normalize(Transform):
@@ -125,11 +127,24 @@ class Normalize(Transform):
         self.mean = mean
         self.std = std
 
-    def get_output_dimensions(self, w_in, h_in):
-        return (w_in, h_in)
+    def get_output_dimensions(self, w_in, h_in, c_in):
+        return (w_in, h_in, c_in)
 
-    def get_output_size(self, w_in, h_in):
-        return w_in * h_in * 3 * 4  # 3 Channel FP32 Tensor
+    def get_output_size(self, w_in, h_in, c_in):
+        return w_in * h_in * c_in * 4  # c_in Channel FP32 Tensor
 
     def get_args(self):
         return [(ctypes.c_double * 3)(*self.mean), (ctypes.c_double * 3)(*self.std)]
+
+class Reshape(Transform):
+
+    def __init__(self, w, h, c):
+        self.w = w
+        self.h = h
+        self.c = c
+
+    def get_output_dimensions(self, w_in, h_in, c_in):
+        return (self.w, self.h, self.c)
+
+    def get_output_size(self, w_in, h_in, c_in):
+        return w_in * h_in * c_in * 4  # c_in Channel FP32 Tensor

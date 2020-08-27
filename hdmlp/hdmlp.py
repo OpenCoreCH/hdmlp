@@ -35,7 +35,7 @@ class Job:
         self.drop_last_batch = drop_last_batch
         self.transforms = [] if transforms is None else transforms
         self.transformed_size = 0
-        self.trans_w, self.trans_h = None, None
+        self.trans_w, self.trans_h, self.trans_c = None, None, None
         if transforms is not None:
             self._get_transformed_size()
         self.seed = seed
@@ -67,19 +67,19 @@ class Job:
         return str(path)
 
     def _get_transformed_size(self):
-        w, h = self.get_transformed_dims()
-        out_size = self.transforms[-1].get_output_size(w, h)
+        w, h, c = self.get_transformed_dims()
+        out_size = self.transforms[-1].get_output_size(w, h, c)
         if out_size == transforms.Transform.UNKNOWN_SIZE:
             raise ValueError("Can't determine the output size after applying the transformations")
         self.transformed_size = out_size
 
     def get_transformed_dims(self):
-        if self.trans_w is None or self.trans_h is None:
-            w, h = transforms.Transform.UNKNOWN_DIMENSION, transforms.Transform.UNKNOWN_DIMENSION
+        if self.trans_w is None or self.trans_h is None or self.trans_c is None:
+            w, h, c = transforms.Transform.UNKNOWN_DIMENSION, transforms.Transform.UNKNOWN_DIMENSION, transforms.Transform.UNKNOWN_DIMENSION
             for transform in self.transforms:
-                w, h = transform.get_output_dimensions(w, h)
-            self.trans_w, self.trans_h = w, h
-        return self.trans_w, self.trans_h
+                w, h, c = transform.get_output_dimensions(w, h, c)
+            self.trans_w, self.trans_h, self.trans_c = w, h, c
+        return self.trans_w, self.trans_h, self.trans_c
 
     def setup(self):
         cpp_transform_names = [transform.__class__.__name__ for transform in self.transforms]
@@ -114,28 +114,27 @@ class Job:
     def destroy(self):
         self.hdmlp_lib.destroy(self.job_id)
 
-    def get(self, num_items = 1, decode_as_np_array=False, np_array_shape=None):
+    def get(self, num_items = 1, decode_as_np_array=False, np_array_shape=None, is_string_label=True, label_shape=None):
         labels = []
         file_end = self.hdmlp_lib.get_next_file_end(self.job_id)
         if file_end < self.buffer_offset:
             self.buffer_offset = 0
+        self.label_distance = self.hdmlp_lib.get_label_distance(self.job_id)
         label_offset = 0
-        self.label_distance = 0
         for i in range(num_items):
             prev_label_offset = label_offset
-            while self.buffer_p[self.buffer_offset + label_offset] != b'\x00':
-                label_offset += 1
-            labels.append(self.buffer_p[self.buffer_offset + prev_label_offset:self.buffer_offset + label_offset].decode('utf-8'))
-            if num_items > 1:
-                if i == 0 and self.label_distance == 0:
-                    while self.buffer_p[self.buffer_offset + label_offset] == b'\x00':
-                        label_offset += 1
-                    self.label_distance = label_offset
-                    #print(label_distance)
-                else:
-                    label_offset = prev_label_offset + self.label_distance
+            if self.label_distance == 0:
+                while self.buffer_p[self.buffer_offset + label_offset] != b'\x00':
+                    label_offset += 1
             else:
-                label_offset += 1
+                label_offset += self.label_distance - 1
+            if is_string_label:
+                labels.append(self.buffer_p[self.buffer_offset + prev_label_offset:self.buffer_offset + label_offset].decode('utf-8'))
+            else:
+                label = np.ctypeslib.as_array(ctypes.cast(ctypes.cast(self.buffer_p, ctypes.c_void_p).value + self.buffer_offset + prev_label_offset, ctypes.POINTER(ctypes.c_float)),
+                                          label_shape)
+                labels.append(label)
+            label_offset += 1
         if decode_as_np_array:
             file = np.ctypeslib.as_array(ctypes.cast(ctypes.cast(self.buffer_p, ctypes.c_void_p).value + self.buffer_offset + label_offset, ctypes.POINTER(ctypes.c_float)),
                                          np_array_shape)

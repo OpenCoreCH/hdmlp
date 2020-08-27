@@ -101,6 +101,7 @@ void Prefetcher::init_threads() {
                                                       transform_pipeline,
                                                       transform_output_size,
                                                       metrics);
+                    largest_label_size = sbf->largest_label_size;
                 }
                 std::thread thread(&StagingBufferPrefetcher::prefetch, std::ref(*sbf), k);
                 storage_class_threads.push_back(std::move(thread));

@@ -17,6 +17,7 @@ HDF5Backend::HDF5Backend(const std::wstring& path, int node_id) {
     this->path = str_path;
     dataset_name_sample = "climate/data";
     dataset_name_label = "climate/labels_0";
+    init_mappings();
 }
 
 int HDF5Backend::get_length() {
@@ -28,6 +29,8 @@ unsigned long HDF5Backend::get_file_size(int file_id) {
 }
 
 void HDF5Backend::fetch(int file_id, char* dst) {
+    std::cout << file_id << std::endl;
+    std::cout << path + file_names[file_id] << std::endl;
     H5::H5File file(path + file_names[file_id], H5F_ACC_RDONLY);
     H5::DataSet sample = file.openDataSet(dataset_name_sample);
     H5::DataSpace sample_dataspace = sample.getSpace();
@@ -36,7 +39,6 @@ void HDF5Backend::fetch(int file_id, char* dst) {
     sample_dataspace.getSimpleExtentDims(sample_dims, NULL);
     H5::DataSpace memspace(sample_rank, sample_dims);
     sample.read(dst, H5::PredType::NATIVE_FLOAT, memspace, sample_dataspace);
-
 }
 
 void HDF5Backend::init_mappings() {
@@ -53,7 +55,6 @@ void HDF5Backend::init_mappings() {
         if (ext && strcmp(ext, ".h5") == 0) {
             FileInformation fi;
             fi.file_name = entry->d_name;
-            file_metadata.emplace_back(fi);
             H5::H5File file(this->path + entry->d_name, H5F_ACC_RDONLY);
             H5::DataSet sample = file.openDataSet(dataset_name_sample);
             H5::DataSet label = file.openDataSet(dataset_name_label);
@@ -91,15 +92,13 @@ void HDF5Backend::init_mappings() {
             }
             fi.num_elems_sample = sample_size;
             fi.num_elems_label = label_size;
+            file_metadata.emplace_back(fi);
         }
     }
     std::sort(file_metadata.begin(), file_metadata.end(), [](FileInformation& a, FileInformation& b) {
                   return a.file_name > b.file_name;
               }
     );
-    file_names.resize(file_metadata.size());
-    sample_num_elems.resize(file_metadata.size());
-    label_num_elems.resize(file_metadata.size());
     for (auto & i : file_metadata) {
         file_names.emplace_back(i.file_name);
         sample_num_elems.emplace_back(i.num_elems_sample);
@@ -112,5 +111,14 @@ int HDF5Backend::get_label_size(int file_id) {
 }
 
 void HDF5Backend::fetch_label(int file_id, char* dst) {
-
+    std::cout << file_id << std::endl;
+    std::cout << path + file_names[file_id] << std::endl;
+    H5::H5File file(path + file_names[file_id], H5F_ACC_RDONLY);
+    H5::DataSet label = file.openDataSet(dataset_name_label);
+    H5::DataSpace label_dataspace = label.getSpace();
+    int label_rank = label_dataspace.getSimpleExtentNdims();
+    hsize_t label_dims[label_rank];
+    label_dataspace.getSimpleExtentDims(label_dims, NULL);
+    H5::DataSpace memspace(label_rank, label_dims);
+    label.read(dst, H5::PredType::NATIVE_FLOAT, memspace, label_dataspace);
 }

@@ -107,6 +107,10 @@ int* get_read_locations(int job_id, int storage_class, int thread_id) {
     return pf[job_id]->metrics->read_locations[storage_class][thread_id].data();
 }
 
+int get_label_distance(int job_id) {
+    return pf[job_id]->largest_label_size;
+}
+
 void destroy(int job_id) {
     delete pf[job_id];
     used_map[job_id] = false;

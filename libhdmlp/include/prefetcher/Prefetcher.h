@@ -34,6 +34,8 @@ public:
 
     Metrics* metrics = nullptr;
 
+    int largest_label_size = 0;
+
 private:
     char* staging_buffer;
     StorageBackend* backend;

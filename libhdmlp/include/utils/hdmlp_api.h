@@ -40,5 +40,7 @@ double* get_augmentation_time(int job_id, int thread_id);
 double* get_read_times(int job_id, int storage_class, int thread_id);
 
 int* get_read_locations(int job_id, int storage_class, int thread_id);
+
+int get_label_distance(int job_id);
 };
 #endif //HDMLP_HDMLP_API_H
