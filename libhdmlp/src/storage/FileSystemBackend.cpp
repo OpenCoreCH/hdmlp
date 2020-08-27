@@ -32,10 +32,6 @@ FileSystemBackend::FileSystemBackend(const std::wstring& path, bool checkpoint, 
     }
 }
 
-std::string FileSystemBackend::get_label(int file_id) {
-    return label_mappings[file_id];
-}
-
 int FileSystemBackend::get_length() {
     return id_mappings.size();
 }
@@ -159,5 +155,13 @@ void FileSystemBackend::fetch(int file_id, char* dst) {
     FILE* f = fopen(file_name.c_str(), "rb");
     fread(dst, 1, entry_size, f);
     fclose(f);
+}
+
+int FileSystemBackend::get_label_size(int file_id) {
+    return label_mappings[file_id].size();
+}
+
+void FileSystemBackend::fetch_label(int file_id, char* dst) {
+    strcpy(dst, label_mappings[file_id].c_str());
 }
 

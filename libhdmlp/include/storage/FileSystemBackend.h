@@ -9,7 +9,9 @@ class FileSystemBackend : public StorageBackend {
 public:
     FileSystemBackend(const std::wstring& path, bool checkpoint, std::string checkpoint_path, int node_id);
 
-    std::string get_label(int file_id) override;
+    void fetch_label(int file_id, char* dst) override;
+
+    virtual int get_label_size(int file_id) override;
 
     int get_length() override;
 

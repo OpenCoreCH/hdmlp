@@ -24,7 +24,7 @@ StagingBufferPrefetcher::StagingBufferPrefetcher(char* staging_buffer, unsigned 
         unsigned long max_file_size = 0;
         for (int i = 0; i < backend->get_length(); i++) {
             unsigned long size = backend->get_file_size(i);
-            int label_size = backend->get_label(i).size() + 1;
+            int label_size = backend->get_label_size(i) + 1;
             if (size > max_file_size) {
                 max_file_size = size;
             }
@@ -81,11 +81,11 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
             }
             int file_id = curr_access_string[j];
             unsigned long file_size = backend->get_file_size(file_id);
-            std::string label = backend->get_label(file_id);
-            unsigned long entry_size = file_size + label.size() + 1;
+            int label_size = backend->get_label_size(file_id);
+            unsigned long entry_size = file_size + label_size + 1;
             if (do_transform) {
                 // Batch mode, i.e. we fetch batch_size consecutive labels / samples
-                entry_size = transform_output_size + label.size() + 1;
+                entry_size = transform_output_size + label_size + 1;
                 if (j % batch_size == 0) {
                     // If drop_last is false, can have smaller batches
                     curr_batch_size = std::min(access_string_size - j, batch_size);
@@ -143,17 +143,16 @@ void StagingBufferPrefetcher::prefetch(int thread_id) {
             }
             crit_section_lock.unlock();
 
-
-            strcpy(staging_buffer + local_staging_buffer_pointer + batch_offset * largest_label_size, label.c_str());
+            backend->fetch_label(file_id, staging_buffer + local_staging_buffer_pointer + batch_offset * largest_label_size);
             if (do_transform) {
                 // Fill remaining bytes with zero bytes
-                for (unsigned long long k = local_staging_buffer_pointer + batch_offset * largest_label_size + label.size() + 1;
+                for (unsigned long long k = local_staging_buffer_pointer + batch_offset * largest_label_size + label_size + 1;
                     k < local_staging_buffer_pointer + (batch_offset + 1) * largest_label_size; k++) {
                     staging_buffer[k] = 0;
                 }
             }
             if (!do_transform) {
-                fetch(file_id, staging_buffer + local_staging_buffer_pointer + label.size() + 1, thread_id);
+                fetch(file_id, staging_buffer + local_staging_buffer_pointer + label_size + 1, thread_id);
             } else {
                 fetch(file_id, transform_buffers[thread_id], thread_id);
                 if (profiling) {
