@@ -138,6 +138,8 @@ class Normalize(Transform):
 
 class Reshape(Transform):
 
+    arg_types = [ctypes.c_int, ctypes.c_int, ctypes.c_int]
+
     def __init__(self, w, h, c):
         self.w = w
         self.h = h
@@ -148,3 +150,22 @@ class Reshape(Transform):
 
     def get_output_size(self, w_in, h_in, c_in):
         return w_in * h_in * c_in * 4  # c_in Channel FP32 Tensor
+
+    def get_args(self):
+        return [self.w, self.h, self.c]
+
+class ScaleShift16(Transform):
+    arg_types = [ctypes.c_float * 16, ctypes.c_float * 16]
+
+    def __init__(self, scale, shift):
+        self.scale = scale
+        self.shift = shift
+
+    def get_output_dimensions(self, w_in, h_in, c_in):
+        return (w_in, h_in, c_in)
+
+    def get_output_size(self, w_in, h_in, c_in):
+        return w_in * h_in * c_in * 4  # c_in Channel FP32 Tensor
+
+    def get_args(self):
+        return [(ctypes.c_float * 16)(*self.scale), (ctypes.c_float * 16)(*self.shift)]

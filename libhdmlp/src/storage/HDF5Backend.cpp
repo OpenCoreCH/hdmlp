@@ -29,8 +29,6 @@ unsigned long HDF5Backend::get_file_size(int file_id) {
 }
 
 void HDF5Backend::fetch(int file_id, char* dst) {
-    std::cout << file_id << std::endl;
-    std::cout << path + file_names[file_id] << std::endl;
     H5::H5File file(path + file_names[file_id], H5F_ACC_RDONLY);
     H5::DataSet sample = file.openDataSet(dataset_name_sample);
     H5::DataSpace sample_dataspace = sample.getSpace();
@@ -111,8 +109,6 @@ int HDF5Backend::get_label_size(int file_id) {
 }
 
 void HDF5Backend::fetch_label(int file_id, char* dst) {
-    std::cout << file_id << std::endl;
-    std::cout << path + file_names[file_id] << std::endl;
     H5::H5File file(path + file_names[file_id], H5F_ACC_RDONLY);
     H5::DataSet label = file.openDataSet(dataset_name_label);
     H5::DataSpace label_dataspace = label.getSpace();

@@ -9,6 +9,7 @@
 #include "../../include/transform/Normalize.h"
 #include "../../include/transform/CenterCrop.h"
 #include "../../include/transform/Reshape.h"
+#include "../../include/transform/ScaleShift16.h"
 
 
 TransformPipeline::TransformPipeline(wchar_t** transform_names, char* transform_args, int transform_output_size, int transform_len) {
@@ -36,6 +37,8 @@ TransformPipeline::TransformPipeline(wchar_t** transform_names, char* transform_
             transform = new CenterCrop();
         } else if (transform_name == "Reshape") {
             transform = new Reshape();
+        } else if (transform_name == "ScaleShift16") {
+            transform = new ScaleShift16();
         } else {
             throw std::runtime_error("Transformation not implemented");
         }

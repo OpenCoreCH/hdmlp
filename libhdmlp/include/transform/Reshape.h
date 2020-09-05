@@ -6,7 +6,12 @@
 
 class Reshape : public Transformation {
 public:
+    char* parse_arguments(char* arg_array);
+
     void transform(TransformPipeline* pipeline);
+
+private:
+    int w, h, c;
 };
 
 
