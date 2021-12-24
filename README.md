@@ -27,5 +27,8 @@ export OpenCV_DIR=$opencv_install_location/lib64/cmake/opencv4/
 - libconfig
 - OpenCV
 
+## Documentation
+The system is documented in [OpenCoreCH/Clairvoyant-Prefetching-for-Machine-Learning-I-O](https://github.com/OpenCoreCH/Clairvoyant-Prefetching-for-Machine-Learning-I-O)
+
 ## License
 HDMLP is published under the new BSD license, see [LICENSE](LICENSE)
